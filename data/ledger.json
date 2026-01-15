@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-01-15T18:50:46+00:00",
+  "updated_at": "2026-01-15T18:51:29+00:00",
   "items": {
     "copa-2026-congress-9512d28f4c": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
@@ -40,7 +40,7 @@
     },
     "asa-2026-congress-87151b58fa": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:50:46+00:00",
+      "last_seen_at": "2026-01-15T18:51:29+00:00",
       "status": "active",
       "event": {
         "series": "ASA",

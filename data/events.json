@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-15T18:50:46+00:00",
+  "generated_at": "2026-01-15T18:51:29+00:00",
   "events": [
     {
       "series": "ASA",
@@ -116,7 +116,7 @@
       "id": "asa-2026-congress-87151b58fa",
       "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:50:46+00:00"
+      "last_seen_at": "2026-01-15T18:51:29+00:00"
     }
   ]
 }
