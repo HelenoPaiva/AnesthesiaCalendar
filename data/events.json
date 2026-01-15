@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-15T18:27:17+00:00",
+  "generated_at": "2026-01-15T18:30:36+00:00",
   "events": [
     {
       "series": "ASA",
@@ -18,6 +18,30 @@
       "status": "ended",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
       "last_seen_at": "2026-01-15T18:18:09+00:00"
+    },
+    {
+      "series": "ASA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-01-25",
+      "end_date": "2026-01-31",
+      "location": "ASA Annual Meeting",
+      "link": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+      "priority": 10,
+      "title": {
+        "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
+        "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+        "snippet": "January 25-31, 2026",
+        "field": "meeting_range"
+      },
+      "source": "scraped",
+      "id": "asa-2026-congress-b4b28b95a5",
+      "status": "active",
+      "first_seen_at": "2026-01-15T18:30:36+00:00",
+      "last_seen_at": "2026-01-15T18:30:36+00:00"
     },
     {
       "series": "ASA",
@@ -49,7 +73,7 @@
       "id": "copa-2026-early_bird_deadline-8846da3b00",
       "status": "manual",
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:27:17+00:00"
+      "last_seen_at": "2026-01-15T18:30:36+00:00"
     },
     {
       "series": "COPA",
@@ -68,7 +92,7 @@
       "id": "copa-2026-congress-9512d28f4c",
       "status": "manual",
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:27:17+00:00"
+      "last_seen_at": "2026-01-15T18:30:36+00:00"
     },
     {
       "series": "ASA",
@@ -76,18 +100,23 @@
       "type": "congress",
       "start_date": "2026-10-16",
       "end_date": "2026-10-20",
-      "location": "San Diego, CA, USA",
+      "location": "ASA Annual Meeting",
       "link": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
       "priority": 10,
       "title": {
         "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
         "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
       },
+      "evidence": {
+        "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+        "snippet": "October 16-20, 2026",
+        "field": "meeting_range"
+      },
       "source": "scraped",
       "id": "asa-2026-congress-87151b58fa",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:18:09+00:00"
+      "last_seen_at": "2026-01-15T18:30:36+00:00"
     }
   ]
 }
