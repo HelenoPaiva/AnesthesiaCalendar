@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-15T18:11:12+00:00",
+  "generated_at": "2026-01-15T18:12:00+00:00",
   "events": [
     {
       "series": "ASA",
@@ -17,7 +17,7 @@
       "id": "asa-2026-abstract_open-5c91243031",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:11:12+00:00"
+      "last_seen_at": "2026-01-15T18:12:00+00:00"
     },
     {
       "series": "ASA",
@@ -35,7 +35,7 @@
       "id": "asa-2026-abstract_deadline-a0255339f6",
       "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:11:12+00:00"
+      "last_seen_at": "2026-01-15T18:12:00+00:00"
     },
     {
       "series": "COPA",
@@ -49,7 +49,7 @@
       "id": "copa-2026-early_bird_deadline-8846da3b00",
       "status": "manual",
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:11:12+00:00"
+      "last_seen_at": "2026-01-15T18:12:00+00:00"
     },
     {
       "series": "COPA",
@@ -68,7 +68,7 @@
       "id": "copa-2026-congress-9512d28f4c",
       "status": "manual",
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:11:12+00:00"
+      "last_seen_at": "2026-01-15T18:12:00+00:00"
     },
     {
       "series": "ASA",
@@ -87,7 +87,7 @@
       "id": "asa-2026-congress-87151b58fa",
       "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:11:12+00:00"
+      "last_seen_at": "2026-01-15T18:12:00+00:00"
     }
   ]
 }
