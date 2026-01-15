@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-01-15T17:30:44+00:00",
+  "updated_at": "2026-01-15T17:31:16+00:00",
   "items": {
     "copa-2026-congress-9512d28f4c": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T17:30:44+00:00",
+      "last_seen_at": "2026-01-15T17:31:16+00:00",
       "status": "manual",
       "event": {
         "series": "COPA",
@@ -24,7 +24,7 @@
     },
     "copa-2026-early_bird_deadline-8846da3b00": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T17:30:44+00:00",
+      "last_seen_at": "2026-01-15T17:31:16+00:00",
       "status": "manual",
       "event": {
         "series": "COPA",
@@ -39,5 +39,7 @@
       }
     }
   },
-  "warnings": []
+  "warnings": [
+    "[ASA] Fetch failed for https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/: HTTP Error 403: Forbidden"
+  ]
 }
