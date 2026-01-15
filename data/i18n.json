@@ -1,0 +1,49 @@
+{
+  "ui": {
+    "subtitle": {
+      "en": "Upcoming deadlines and congress dates — auto-updated.",
+      "pt": "Prazos e datas de congressos — atualização automática."
+    },
+    "today": { "en": "Today", "pt": "Hoje" },
+    "last_updated": { "en": "Last updated", "pt": "Última atualização" },
+    "happening_today": { "en": "Happening today", "pt": "Acontecendo hoje" },
+    "upcoming": { "en": "Upcoming", "pt": "Próximos" },
+    "next_deadlines": { "en": "Next deadlines", "pt": "Próximos prazos" },
+    "upcoming_congresses": { "en": "Upcoming congresses", "pt": "Próximos congressos" },
+    "remind_me": { "en": "Remind me", "pt": "Lembrar" },
+    "open": { "en": "Open", "pt": "Abrir" },
+    "no_deadlines": { "en": "No upcoming deadlines found.", "pt": "Nenhum prazo futuro encontrado." },
+    "no_congresses": { "en": "No upcoming congresses found.", "pt": "Nenhum congresso futuro encontrado." },
+    "nothing_today": { "en": "Nothing today.", "pt": "Nada hoje." },
+    "nothing_today_next": {
+      "en": "Nothing today. Next: {x}",
+      "pt": "Nada hoje. Próximo: {x}"
+    },
+    "in_days": { "en": "in {n} days", "pt": "em {n} dias" },
+    "last_seen": { "en": "last seen {d}", "pt": "visto por último em {d}" },
+    "footer": {
+      "en": "Built as a static GitHub Pages site. Data refreshes via GitHub Actions.",
+      "pt": "Site estático no GitHub Pages. Dados atualizados via GitHub Actions."
+    }
+  },
+  "types": {
+    "abstract_open": { "en": "Abstract submission opens", "pt": "Abertura de submissão de resumo" },
+    "abstract_deadline": { "en": "Abstract submission deadline", "pt": "Prazo final de submissão de resumo" },
+    "late_breaking_deadline": { "en": "Late-breaking abstract deadline", "pt": "Prazo final (late-breaking)" },
+    "acceptance_notification": { "en": "Acceptance notification", "pt": "Notificação de aceite" },
+    "presenter_confirmation": { "en": "Presenter confirmation", "pt": "Confirmação de apresentador" },
+    "substitution_deadline": { "en": "Presenter substitution deadline", "pt": "Prazo final para substituição" },
+    "early_bird_deadline": { "en": "Early-bird registration deadline", "pt": "Prazo final early-bird" },
+    "regular_registration_deadline": { "en": "Regular registration deadline", "pt": "Prazo final inscrição regular" },
+    "housing_deadline": { "en": "Housing deadline", "pt": "Prazo final hospedagem" },
+    "workshop_deadline": { "en": "Workshop deadline", "pt": "Prazo final workshop" },
+    "other_deadline": { "en": "Deadline", "pt": "Prazo" },
+    "congress": { "en": "Congress", "pt": "Congresso" }
+  },
+  "status": {
+    "active": { "en": "Active", "pt": "Ativo" },
+    "missing": { "en": "Removed from source", "pt": "Sumiu do site" },
+    "ended": { "en": "Past", "pt": "Passado" },
+    "manual": { "en": "Manual", "pt": "Manual" }
+  }
+}
