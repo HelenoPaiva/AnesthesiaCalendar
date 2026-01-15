@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple, Optional
 
 from scripts.scrapers.http import fetch_text
@@ -33,30 +34,89 @@ def _ymd(month: str, day: str, year: str) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
-def _find_meeting_range(text: str) -> Optional[Tuple[str, str]]:
+@dataclass
+class Candidate:
+    value: Any
+    trust: int
+    role: str
+    url: str
+    snippet: str
+
+
+def _best_candidate(cands: List[Candidate]) -> Optional[Candidate]:
+    if not cands:
+        return None
+    return sorted(cands, key=lambda c: c.trust, reverse=True)[0]
+
+
+def _collect_conflicts(cands: List[Candidate], chosen: Candidate) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for c in cands:
+        if c.value != chosen.value:
+            out.append({
+                "value": c.value,
+                "trust": c.trust,
+                "role": c.role,
+                "url": c.url,
+                "snippet": c.snippet[:220]
+            })
+    return out
+
+
+def _find_meeting_range(text: str) -> Optional[Tuple[Tuple[str, str], str]]:
     """
-    Looks for: "October 16-20, 2026" OR "October 16–20, 2026"
-    Returns (start_ymd, end_ymd)
+    Finds ranges like:
+      "October 16-20, 2026"
+      "October 16–20, 2026"
+      "Oct 16–20, 2026"
+    Returns ((start_ymd, end_ymd), matched_snippet)
     """
-    # dash can be "-" or "–" or "—"
     m = re.search(
-        r"\b([A-Za-z]+)\s+(\d{1,2})\s*[-–—]\s*(\d{1,2}),\s*(\d{4})\b",
+        r"\b([A-Za-z]{3,9})\s+(\d{1,2})\s*[-–—]\s*(\d{1,2}),\s*(\d{4})\b",
         text
     )
     if not m:
         return None
     month, d1, d2, year = m.group(1), m.group(2), m.group(3), m.group(4)
-    return _ymd(month, d1, year), _ymd(month, d2, year)
+    return (_ymd(month, d1, year), _ymd(month, d2, year)), m.group(0)
 
 
-def _find_general_open_close(text: str) -> Optional[Tuple[str, str]]:
+def _find_scientific_abstracts_window(text: str) -> Optional[Tuple[Tuple[str, str], str]]:
     """
-    From the MGB page:
-    "General session submissions for ASA 2026 in San Diego are open from August 26 until November 13, 2025."
-    Returns (open_ymd, close_ymd)
+    Finds a window like:
+      "Scientific Abstracts Jan 6-Mar 31, 2026"
+      "Scientific Abstracts January 6 – March 31, 2026"
+    Returns ((open_ymd, close_ymd), matched_snippet)
+    """
+    # Allow: "Scientific Abstracts Jan6-Mar 31, 2026" and variants with spaces/dashes
+    # Capture month/day (start) and month/day/year (end); start year inferred as end year if omitted
+    pattern = (
+        r"Scientific\s+Abstracts.*?"
+        r"([A-Za-z]{3,9})\s*([0-9]{1,2})"
+        r"(?:,\s*([0-9]{4}))?"
+        r"\s*[-–—]\s*"
+        r"([A-Za-z]{3,9})\s*([0-9]{1,2}),\s*([0-9]{4})"
+    )
+    m = re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+    if not m:
+        return None
+
+    sm, sd, sy_opt, em, ed, ey = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)
+    sy = sy_opt if sy_opt else ey
+
+    open_ymd = _ymd(sm, sd, sy)
+    close_ymd = _ymd(em, ed, ey)
+    return (open_ymd, close_ymd), m.group(0).strip()
+
+
+def _find_general_open_close(text: str) -> Optional[Tuple[Tuple[str, str], str]]:
+    """
+    Institutional style:
+      "General session submissions for ASA 2026 ... are open from August 26 until November 13, 2025."
+    Returns ((open_ymd, close_ymd), matched_snippet)
     """
     m = re.search(
-        r"General session submissions for ASA\s*2026.*?open from\s+([A-Za-z]+)\s+(\d{1,2})\s+until\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})",
+        r"General session submissions for ASA\s*2026.*?open from\s+([A-Za-z]{3,9})\s+(\d{1,2})\s+until\s+([A-Za-z]{3,9})\s+(\d{1,2}),\s*(\d{4})",
         text,
         flags=re.IGNORECASE | re.DOTALL
     )
@@ -64,197 +124,220 @@ def _find_general_open_close(text: str) -> Optional[Tuple[str, str]]:
         return None
 
     m1, d1, m2, d2, y2 = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
-    # Start year is not written; infer from end year (works for Aug->Nov 2025)
-    y1 = y2
-    return _ymd(m1, d1, y1), _ymd(m2, d2, y2)
+    y1 = y2  # good enough for Aug->Nov 2025
+    return (_ymd(m1, d1, y1), _ymd(m2, d2, y2)), m.group(0).strip()
 
 
-def _find_named_window(text: str, label: str) -> Optional[Tuple[str, str]]:
+def _find_named_window(text: str, label: str) -> Optional[Tuple[Tuple[str, str], str]]:
     """
-    Extracts windows like:
+    Institutional style:
       "PBLD Dec 2, 2025- Feb 23, 2026"
-      "Scientific Abstracts Jan6-Mar 21, 2026"
       "Medically Challenging Cases Feb 3-April 28, 2026"
-
-    Returns (open_ymd, close_ymd)
+    Returns ((open_ymd, close_ymd), matched_snippet)
     """
-    # allow "Jan6" with no space; allow optional year on start
-    pattern = rf"{re.escape(label)}\s+" \
-              r"([A-Za-z]+)\s*([0-9]{1,2})(?:,\s*([0-9]{4}))?\s*[-–—]\s*" \
-              r"([A-Za-z]+)\s*([0-9]{1,2}),\s*([0-9]{4})"
+    pattern = (
+        rf"{re.escape(label)}\s+"
+        r"([A-Za-z]{3,9})\s*([0-9]{1,2})(?:,\s*([0-9]{4}))?"
+        r"\s*[-–—]\s*"
+        r"([A-Za-z]{3,9})\s*([0-9]{1,2}),\s*([0-9]{4})"
+    )
     m = re.search(pattern, text, flags=re.IGNORECASE)
     if not m:
         return None
 
     sm, sd, sy_opt, em, ed, ey = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)
+    sy = sy_opt if sy_opt else ey
+    return (_ymd(sm, sd, sy), _ymd(em, ed, ey)), m.group(0).strip()
 
-    # If start year missing, infer:
-    # - if start month/day logically before end month/day, same year as end year
-    # - else previous year (rare for these)
-    if sy_opt:
-        sy = sy_opt
+
+def _iter_sources(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Supports:
+      - new: cfg["sources"] = [{role, trust, url}, ...]
+      - old: cfg["urls"] = [url, ...]  -> will be treated as role="unknown", trust=10
+    """
+    srcs = cfg.get("sources")
+    out: List[Dict[str, Any]] = []
+
+    if isinstance(srcs, list) and srcs:
+        for s in srcs:
+            if not isinstance(s, dict):
+                continue
+            url = str(s.get("url", "")).strip()
+            if not url:
+                continue
+            out.append({
+                "url": url,
+                "role": str(s.get("role", "unknown")).strip() or "unknown",
+                "trust": int(s.get("trust", 10)) if str(s.get("trust", "")).isdigit() else 10,
+            })
     else:
-        sy = ey
+        urls = cfg.get("urls", []) or []
+        for u in urls:
+            out.append({"url": str(u), "role": "unknown", "trust": 10})
 
-    return _ymd(sm, sd, sy), _ymd(em, ed, ey)
+    # high trust first
+    out.sort(key=lambda x: x["trust"], reverse=True)
+    return out
 
 
 def scrape_asa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
-    urls = cfg.get("urls", []) or []
     warnings: List[str] = []
     events: List[Dict[str, Any]] = []
 
-    if not urls:
-        return [], ["No source URLs configured in data/sources.json."]
+    sources = _iter_sources(cfg)
+    if not sources:
+        return [], ["No source URLs configured for ASA in data/sources.json."]
 
-    # Try URLs until one works
-    text = None
-    used_url = None
-    for url in urls:
+    meeting_cands: List[Candidate] = []
+    sci_cands: List[Candidate] = []
+    general_cands: List[Candidate] = []
+    pbld_cands: List[Candidate] = []
+    mcc_cands: List[Candidate] = []
+
+    for src in sources:
+        url = src["url"]
+        role = src["role"]
+        trust = src["trust"]
+
         try:
-            t, _ct = fetch_text(url)
-            text = t
-            used_url = url
-            break
+            text, _ct = fetch_text(url)
         except Exception as e:
-            warnings.append(f"Fetch failed for {url}: {e}")
+            warnings.append(f"Fetch failed ({role}, trust={trust}) for {url}: {e}")
+            continue
 
-    if not text or not used_url:
-        return [], warnings or ["Failed to fetch any ASA source URL."]
+        # Meeting range is “portable”: many sources include it.
+        if role in {"official_meeting", "institutional", "wfsa", "tourism", "unknown"}:
+            mr = _find_meeting_range(text)
+            if mr:
+                (start_ymd, end_ymd), snippet = mr
+                meeting_cands.append(Candidate((start_ymd, end_ymd), trust, role, url, snippet))
 
-    # Meeting date range (ASA 2026)
-    meeting = _find_meeting_range(text)
-    if meeting:
-        start_ymd, end_ymd = meeting
-        events.append({
+        # Scientific abstracts window: best from official submissions, but can exist in institutional
+        if role in {"official_submissions", "institutional", "unknown"}:
+            sw = _find_scientific_abstracts_window(text)
+            if sw:
+                (open_ymd, close_ymd), snippet = sw
+                sci_cands.append(Candidate((open_ymd, close_ymd), trust, role, url, snippet))
+
+        # These (general/PBLD/MCC) currently only from institutional in our known sources
+        if role in {"institutional", "unknown"}:
+            gen = _find_general_open_close(text)
+            if gen:
+                (open_ymd, close_ymd), snippet = gen
+                general_cands.append(Candidate((open_ymd, close_ymd), trust, role, url, snippet))
+
+            pbld = _find_named_window(text, "PBLD")
+            if pbld:
+                (open_ymd, close_ymd), snippet = pbld
+                pbld_cands.append(Candidate((open_ymd, close_ymd), trust, role, url, snippet))
+
+            mcc = _find_named_window(text, "Medically Challenging Cases")
+            if mcc:
+                (open_ymd, close_ymd), snippet = mcc
+                mcc_cands.append(Candidate((open_ymd, close_ymd), trust, role, url, snippet))
+
+    # Choose best per datum + attach conflicts/evidence
+    meeting_best = _best_candidate(meeting_cands)
+    sci_best = _best_candidate(sci_cands)
+    general_best = _best_candidate(general_cands)
+    pbld_best = _best_candidate(pbld_cands)
+    mcc_best = _best_candidate(mcc_cands)
+
+    if meeting_best:
+        start_ymd, end_ymd = meeting_best.value
+        ev = {
             "series": "ASA",
             "year": 2026,
             "type": "congress",
             "start_date": start_ymd,
             "end_date": end_ymd,
             "location": "San Diego, CA, USA",
-            "link": used_url,
-            "priority": 10
-        })
+            "link": meeting_best.url,
+            "priority": 10,
+            "evidence": {
+                "role": meeting_best.role,
+                "trust": meeting_best.trust,
+                "url": meeting_best.url,
+                "snippet": meeting_best.snippet[:220]
+            }
+        }
+        conflicts = _collect_conflicts(meeting_cands, meeting_best)
+        if conflicts:
+            ev["conflicts"] = {"meeting_range": conflicts}
+        events.append(ev)
     else:
-        warnings.append("Could not find meeting date range (e.g., 'October 16-20, 2026').")
+        warnings.append("Could not extract ASA 2026 meeting date range from any source.")
 
-    # General Session submissions open/close (custom titles)
-    gen = _find_general_open_close(text)
-    if gen:
-        open_ymd, close_ymd = gen
+    if sci_best:
+        open_ymd, close_ymd = sci_best.value
 
-        events.append({
-            "series": "ASA",
-            "year": 2026,
-            "type": "other_deadline",
-            "date": open_ymd,
-            "location": "—",
-            "link": used_url,
-            "priority": 8,
-            "title": {
-                "en": "ASA 2026 — General session submissions open",
-                "pt": "ASA 2026 — Abertura de submissões (sessões gerais)"
-            }
-        })
-        events.append({
-            "series": "ASA",
-            "year": 2026,
-            "type": "other_deadline",
-            "date": close_ymd,
-            "location": "—",
-            "link": used_url,
-            "priority": 8,
-            "title": {
-                "en": "ASA 2026 — General session submissions deadline",
-                "pt": "ASA 2026 — Prazo final (sessões gerais)"
-            }
-        })
-    else:
-        warnings.append("Could not find General session submissions open/close window.")
+        conflicts = _collect_conflicts(sci_cands, sci_best)
+        conflict_obj = {"scientific_abstracts_window": conflicts} if conflicts else None
 
-    # PBLD window
-    pbld = _find_named_window(text, "PBLD")
-    if pbld:
-        open_ymd, close_ymd = pbld
-        events.append({
-            "series": "ASA",
-            "year": 2026,
-            "type": "other_deadline",
-            "date": open_ymd,
-            "location": "—",
-            "link": used_url,
-            "priority": 7,
-            "title": {
-                "en": "ASA 2026 — PBLD submissions open",
-                "pt": "ASA 2026 — Abertura submissões PBLD"
-            }
-        })
-        events.append({
-            "series": "ASA",
-            "year": 2026,
-            "type": "other_deadline",
-            "date": close_ymd,
-            "location": "—",
-            "link": used_url,
-            "priority": 7,
-            "title": {
-                "en": "ASA 2026 — PBLD submissions deadline",
-                "pt": "ASA 2026 — Prazo final submissões PBLD"
-            }
-        })
-    else:
-        warnings.append("Could not find PBLD date window.")
-
-    # Scientific Abstracts window → map to abstract_open + abstract_deadline
-    sci = _find_named_window(text, "Scientific Abstracts")
-    if sci:
-        open_ymd, close_ymd = sci
-        events.append({
+        ev_open = {
             "series": "ASA",
             "year": 2026,
             "type": "abstract_open",
             "date": open_ymd,
             "location": "—",
-            "link": used_url,
+            "link": sci_best.url,
             "priority": 10,
             "title": {
                 "en": "ASA 2026 — Scientific abstracts open",
                 "pt": "ASA 2026 — Abertura de resumos científicos"
+            },
+            "evidence": {
+                "role": sci_best.role,
+                "trust": sci_best.trust,
+                "url": sci_best.url,
+                "snippet": sci_best.snippet[:220]
             }
-        })
-        events.append({
+        }
+        if conflict_obj:
+            ev_open["conflicts"] = conflict_obj
+
+        ev_close = {
             "series": "ASA",
             "year": 2026,
             "type": "abstract_deadline",
             "date": close_ymd,
             "location": "—",
-            "link": used_url,
+            "link": sci_best.url,
             "priority": 10,
             "title": {
                 "en": "ASA 2026 — Scientific abstracts deadline",
                 "pt": "ASA 2026 — Prazo final resumos científicos"
+            },
+            "evidence": {
+                "role": sci_best.role,
+                "trust": sci_best.trust,
+                "url": sci_best.url,
+                "snippet": sci_best.snippet[:220]
             }
-        })
-    else:
-        warnings.append("Could not find Scientific Abstracts date window.")
+        }
+        if conflict_obj:
+            ev_close["conflicts"] = conflict_obj
 
-    # Medically Challenging Cases window
-    mcc = _find_named_window(text, "Medically Challenging Cases")
-    if mcc:
-        open_ymd, close_ymd = mcc
+        events.extend([ev_open, ev_close])
+    else:
+        warnings.append("Could not extract Scientific Abstracts submission window from any source.")
+
+    # Optional extras (institutional-only right now)
+    def add_open_close(best: Optional[Candidate], open_title: Dict[str, str], close_title: Dict[str, str], priority: int):
+        if not best:
+            return
+        open_ymd, close_ymd = best.value
         events.append({
             "series": "ASA",
             "year": 2026,
             "type": "other_deadline",
             "date": open_ymd,
             "location": "—",
-            "link": used_url,
-            "priority": 6,
-            "title": {
-                "en": "ASA 2026 — Medically challenging cases open",
-                "pt": "ASA 2026 — Abertura casos desafiadores"
-            }
+            "link": best.url,
+            "priority": priority,
+            "title": open_title,
+            "evidence": {"role": best.role, "trust": best.trust, "url": best.url, "snippet": best.snippet[:220]}
         })
         events.append({
             "series": "ASA",
@@ -262,14 +345,31 @@ def scrape_asa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             "type": "other_deadline",
             "date": close_ymd,
             "location": "—",
-            "link": used_url,
-            "priority": 6,
-            "title": {
-                "en": "ASA 2026 — Medically challenging cases deadline",
-                "pt": "ASA 2026 — Prazo final casos desafiadores"
-            }
+            "link": best.url,
+            "priority": priority,
+            "title": close_title,
+            "evidence": {"role": best.role, "trust": best.trust, "url": best.url, "snippet": best.snippet[:220]}
         })
-    else:
-        warnings.append("Could not find Medically Challenging Cases date window.")
+
+    add_open_close(
+        general_best,
+        {"en": "ASA 2026 — General session submissions open", "pt": "ASA 2026 — Abertura submissões (sessões gerais)"},
+        {"en": "ASA 2026 — General session submissions deadline", "pt": "ASA 2026 — Prazo final (sessões gerais)"},
+        priority=8
+    )
+
+    add_open_close(
+        pbld_best,
+        {"en": "ASA 2026 — PBLD submissions open", "pt": "ASA 2026 — Abertura submissões PBLD"},
+        {"en": "ASA 2026 — PBLD submissions deadline", "pt": "ASA 2026 — Prazo final submissões PBLD"},
+        priority=7
+    )
+
+    add_open_close(
+        mcc_best,
+        {"en": "ASA 2026 — Medically challenging cases open", "pt": "ASA 2026 — Abertura casos desafiadores"},
+        {"en": "ASA 2026 — Medically challenging cases deadline", "pt": "ASA 2026 — Prazo final casos desafiadores"},
+        priority=6
+    )
 
     return events, warnings
