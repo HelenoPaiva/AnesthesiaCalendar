@@ -1,0 +1,44 @@
+name: Update anesthesia congress calendar data
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Hourly (best-effort timing by GitHub)
+    - cron: "10 * * * *"
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "data-update"
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run updater
+        run: |
+          python -m scripts.update
+
+      - name: Commit changes (if any)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add data/events.json data/ledger.json
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update events data"
+            git push
+          fi
