@@ -1,4 +1,43 @@
 {
-  "updated_at": "—",
-  "items": {}
+  "updated_at": "2026-01-15T17:11:38+00:00",
+  "items": {
+    "copa-2026-congress-9512d28f4c": {
+      "first_seen_at": "2026-01-15T17:11:38+00:00",
+      "last_seen_at": "2026-01-15T17:11:38+00:00",
+      "status": "manual",
+      "event": {
+        "series": "COPA",
+        "year": 2026,
+        "type": "congress",
+        "start_date": "2026-09-10",
+        "end_date": "2026-09-12",
+        "location": "São Paulo, Brazil",
+        "link": "https://example.com/copa",
+        "priority": 10,
+        "title": {
+          "en": "COPA 2026 — Congress",
+          "pt": "COPA 2026 — Congresso"
+        },
+        "source": "manual",
+        "id": "copa-2026-congress-9512d28f4c"
+      }
+    },
+    "copa-2026-early_bird_deadline-8846da3b00": {
+      "first_seen_at": "2026-01-15T17:11:38+00:00",
+      "last_seen_at": "2026-01-15T17:11:38+00:00",
+      "status": "manual",
+      "event": {
+        "series": "COPA",
+        "year": 2026,
+        "type": "early_bird_deadline",
+        "date": "2026-06-01",
+        "location": "—",
+        "link": "https://example.com/copa-registration",
+        "priority": 10,
+        "source": "manual",
+        "id": "copa-2026-early_bird_deadline-8846da3b00"
+      }
+    }
+  },
+  "warnings": []
 }
