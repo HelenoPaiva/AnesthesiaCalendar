@@ -29,7 +29,7 @@ jobs:
 
       - name: Run updater
         run: |
-          python -m scripts.update
+          python scripts/update.py
 
       - name: Commit changes (if any)
         run: |
