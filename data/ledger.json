@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-01-15T18:52:42+00:00",
+  "updated_at": "2026-01-15T18:53:50+00:00",
   "items": {
     "copa-2026-congress-9512d28f4c": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
@@ -40,7 +40,7 @@
     },
     "asa-2026-congress-87151b58fa": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -66,8 +66,8 @@
     },
     "asa-2026-abstract_open-5c91243031": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:18:09+00:00",
-      "status": "missing",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
       "event": {
         "series": "ASA",
         "year": 2026,
@@ -80,14 +80,19 @@
           "en": "ASA 2026 — Scientific abstracts open",
           "pt": "ASA 2026 — Abertura de resumos científicos"
         },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
+          "field": "scientific_abstracts_window_open"
+        },
         "source": "scraped",
         "id": "asa-2026-abstract_open-5c91243031"
       }
     },
     "asa-2026-abstract_deadline-a0255339f6": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:18:09+00:00",
-      "status": "missing",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
       "event": {
         "series": "ASA",
         "year": 2026,
@@ -99,6 +104,11 @@
         "title": {
           "en": "ASA 2026 — Scientific abstracts deadline",
           "pt": "ASA 2026 — Prazo final resumos científicos"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
+          "field": "scientific_abstracts_window_close"
         },
         "source": "scraped",
         "id": "asa-2026-abstract_deadline-a0255339f6"
@@ -132,7 +142,7 @@
     },
     "asa-2026-congress-8ebc5818d5": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -158,7 +168,7 @@
     },
     "asa-2026-congress-76e31a775b": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -184,7 +194,7 @@
     },
     "asa-2026-congress-3ecf64e391": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -210,7 +220,7 @@
     },
     "asa-2026-congress-9fb2e9040a": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -236,7 +246,7 @@
     },
     "asa-2026-congress-dc5b59e119": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -262,7 +272,7 @@
     },
     "asa-2027-congress-d076be6893": {
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-15T18:52:42+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -284,6 +294,181 @@
         },
         "source": "scraped",
         "id": "asa-2027-congress-d076be6893"
+      }
+    },
+    "asa-2025-other_deadline-3b6fded6c7": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2025,
+        "type": "other_deadline",
+        "date": "2025-08-26",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "General session submissions — open",
+          "pt": "Submissões sessões gerais — abertura"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "General Session Submissions: August 26 - November 13, 2025",
+          "field": "general_session_window_open"
+        },
+        "source": "scraped",
+        "id": "asa-2025-other_deadline-3b6fded6c7"
+      }
+    },
+    "asa-2025-other_deadline-c61544c4bf": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2025,
+        "type": "other_deadline",
+        "date": "2025-11-13",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "General session submissions — deadline",
+          "pt": "Submissões sessões gerais — prazo final"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "General Session Submissions: August 26 - November 13, 2025",
+          "field": "general_session_window_close"
+        },
+        "source": "scraped",
+        "id": "asa-2025-other_deadline-c61544c4bf"
+      }
+    },
+    "asa-2026-other_deadline-b49cb8e6f9": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2026,
+        "type": "other_deadline",
+        "date": "2026-01-06",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "Scientific & educational exhibits — open",
+          "pt": "Exposições científicas e educacionais — abertura"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Scientific and Educational Exhibits: January 6 – March 31, 2026",
+          "field": "exhibits_window_open"
+        },
+        "source": "scraped",
+        "id": "asa-2026-other_deadline-b49cb8e6f9"
+      }
+    },
+    "asa-2026-other_deadline-417de89c6f": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2026,
+        "type": "other_deadline",
+        "date": "2026-03-31",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "Scientific & educational exhibits — deadline",
+          "pt": "Exposições científicas e educacionais — prazo final"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Scientific and Educational Exhibits: January 6 – March 31, 2026",
+          "field": "exhibits_window_close"
+        },
+        "source": "scraped",
+        "id": "asa-2026-other_deadline-417de89c6f"
+      }
+    },
+    "asa-2026-other_deadline-8dc96ed190": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2026,
+        "type": "other_deadline",
+        "date": "2026-02-03",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "PBLD submissions — deadline",
+          "pt": "Submissões PBLD — prazo final"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Problem-Based Learning Discussion Sessions: December 2, 2025 – February 3, 2026",
+          "field": "pbl_window_close"
+        },
+        "source": "scraped",
+        "id": "asa-2026-other_deadline-8dc96ed190"
+      }
+    },
+    "asa-2026-other_deadline-9b62b1388a": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2026,
+        "type": "other_deadline",
+        "date": "2026-04-28",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "Medically challenging cases / QI projects — deadline",
+          "pt": "Casos desafiadores / projetos de melhoria — prazo final"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Medically Challenging Cases and Quality Improvement Projects: February 3 – April 28, 2026",
+          "field": "mcc_qi_window_close"
+        },
+        "source": "scraped",
+        "id": "asa-2026-other_deadline-9b62b1388a"
+      }
+    },
+    "asa-2026-other_deadline-7bde7107b7": {
+      "first_seen_at": "2026-01-15T18:53:50+00:00",
+      "last_seen_at": "2026-01-15T18:53:50+00:00",
+      "status": "active",
+      "event": {
+        "series": "ASA",
+        "year": 2026,
+        "type": "other_deadline",
+        "date": "2025-12-02",
+        "location": "—",
+        "link": "https://www.asahq.org/annualmeeting/education/submissions",
+        "priority": 9,
+        "title": {
+          "en": "PBLD submissions — open",
+          "pt": "Submissões PBLD — abertura"
+        },
+        "evidence": {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "snippet": "Problem-Based Learning Discussion Sessions: December 2, 2025 – February 3, 2026",
+          "field": "pbl_window_open"
+        },
+        "source": "scraped",
+        "id": "asa-2026-other_deadline-7bde7107b7"
       }
     }
   },
