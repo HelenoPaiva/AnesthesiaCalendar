@@ -1,31 +1,52 @@
 {
-  "series": "ASA",
-  "priority": 10,
   "sources": [
     {
-      "role": "official_meeting",
-      "trust": 100,
-      "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting"
+      "series": "ASA",
+      "priority": 10,
+      "sources": [
+        {
+          "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+          "trust": 100
+        },
+        {
+          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
+          "trust": 80
+        }
+      ]
+    },
+
+    {
+      "series": "COPA",
+      "priority": 10,
+      "urls": [
+        "https://example.com/copa"
+      ]
+    },
+
+    {
+      "series": "CBA",
+      "priority": 10,
+      "urls": []
     },
     {
-      "role": "official_submissions",
-      "trust": 100,
-      "url": "https://www.asahq.org/annualmeeting/education/submissions"
+      "series": "WCA",
+      "priority": 10,
+      "urls": []
     },
     {
-      "role": "institutional",
-      "trust": 70,
-      "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/"
+      "series": "EUROANAESTHESIA",
+      "priority": 7,
+      "urls": []
     },
     {
-      "role": "wfsa",
-      "trust": 80,
-      "url": "https://wfsahq.org/member-focus/about-our-members/regional-sections/regional-congresses/"
+      "series": "CLASA",
+      "priority": 7,
+      "urls": []
     },
     {
-      "role": "tourism",
-      "trust": 60,
-      "url": "https://www.visitsandiego.com/calendar/2208708-american-society-of-anesthesiologists-annual-meeting"
+      "series": "LASRA",
+      "priority": 7,
+      "urls": []
     }
   ]
 }
