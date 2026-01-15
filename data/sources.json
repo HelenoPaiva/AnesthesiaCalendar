@@ -9,22 +9,23 @@
           "trust": 100
         },
         {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "trust": 100
+        },
+        {
           "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "trust": 80
+          "trust": 60
         }
       ]
     },
 
     {
-      "series": "COPA",
-      "priority": 10,
-      "urls": [
-        "https://example.com/copa"
-      ]
-    },
-
-    {
       "series": "CBA",
+      "priority": 10,
+      "urls": []
+    },
+    {
+      "series": "COPA",
       "priority": 10,
       "urls": []
     },
