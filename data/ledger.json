@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-01-15T18:12:00+00:00",
+  "updated_at": "2026-01-15T18:17:38+00:00",
   "items": {
     "copa-2026-congress-9512d28f4c": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:12:00+00:00",
+      "last_seen_at": "2026-01-15T18:17:38+00:00",
       "status": "manual",
       "event": {
         "series": "COPA",
@@ -24,7 +24,7 @@
     },
     "copa-2026-early_bird_deadline-8846da3b00": {
       "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:12:00+00:00",
+      "last_seen_at": "2026-01-15T18:17:38+00:00",
       "status": "manual",
       "event": {
         "series": "COPA",
@@ -40,7 +40,7 @@
     },
     "asa-2026-congress-87151b58fa": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:12:00+00:00",
+      "last_seen_at": "2026-01-15T18:17:38+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -61,7 +61,7 @@
     },
     "asa-2026-abstract_open-5c91243031": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:12:00+00:00",
+      "last_seen_at": "2026-01-15T18:17:38+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -81,7 +81,7 @@
     },
     "asa-2026-abstract_deadline-a0255339f6": {
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-15T18:12:00+00:00",
+      "last_seen_at": "2026-01-15T18:17:38+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -101,7 +101,8 @@
     }
   },
   "warnings": [
-    "[ASA] ASA scraper is currently static for ANESTHESIOLOGY 2026 (no network calls). Update this file when 2027+ dates are available.",
+    "[ASA] ASA scraper: using static baseline for ANESTHESIOLOGY 2026; attempting live updates from configured sources.",
+    "[ASA] ASA: no URLs configured in data/sources.json (sources/urls).",
     "[CBA] No source URLs configured in data/sources.json.",
     "[COPA] No source URLs configured in data/sources.json.",
     "[EUROANAESTHESIA] No source URLs configured in data/sources.json.",
