@@ -2,7 +2,15 @@
   "sources": [
     { "series": "CBA", "priority": 10, "urls": ["https://example.com/cba"] },
     { "series": "COPA", "priority": 10, "urls": ["https://example.com/copa"] },
-    { "series": "ASA", "priority": 10, "urls": ["https://example.com/asa"] },
+
+    {
+      "series": "ASA",
+      "priority": 10,
+      "urls": [
+        "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/"
+      ]
+    },
+
     { "series": "WCA", "priority": 10, "urls": ["https://example.com/wca"] },
     { "series": "EUROANAESTHESIA", "priority": 7, "urls": ["https://example.com/euroanaesthesia"] },
     { "series": "CLASA", "priority": 7, "urls": ["https://example.com/clasa"] },
