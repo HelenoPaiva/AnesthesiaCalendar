@@ -8,106 +8,87 @@
     />
     <title>Anesthesia Congress Calendar</title>
 
-    <!-- Tailwind CDN (simple MVP) -->
+    <!-- Tailwind CDN (MVP) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
 
-  <body class="bg-slate-50 text-slate-900">
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <!-- Header -->
-      <header class="flex items-start justify-between gap-3">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Anesthesia Congress Calendar
-          </h1>
-          <p class="text-sm text-slate-600 mt-1" id="subtitle">
+  <body class="acc-bg acc-text">
+    <div class="acc-wrap">
+      <!-- Top bar -->
+      <header class="acc-topbar">
+        <div class="acc-titleblock">
+          <div class="acc-title">Anesthesia Congress Calendar</div>
+          <div class="acc-subtitle" id="subtitle">
             Upcoming deadlines and congress dates — auto-updated.
-          </p>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <div
-            class="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm"
-            role="group"
-            aria-label="Language toggle"
-          >
-            <button
-              id="lang-en"
-              class="px-3 py-1.5 rounded-lg text-sm font-medium"
-              type="button"
-            >
-              EN
-            </button>
-            <button
-              id="lang-pt"
-              class="px-3 py-1.5 rounded-lg text-sm font-medium"
-              type="button"
-            >
-              PT
-            </button>
+        <div class="acc-actions">
+          <div class="acc-sep"></div>
+
+          <div class="acc-toggle" role="group" aria-label="Language toggle">
+            <button id="lang-en" class="acc-toggle-btn" type="button">EN</button>
+            <button id="lang-pt" class="acc-toggle-btn" type="button">PT</button>
           </div>
         </div>
       </header>
 
-      <!-- Status bar -->
-      <section class="mt-4">
-        <div
-          class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-        >
-          <div class="text-sm text-slate-700">
-            <span class="font-medium" id="today-label">Today</span>:
-            <span id="today-value" class="font-semibold"></span>
-          </div>
+      <!-- Status strip -->
+      <section class="acc-strip">
+        <div class="acc-strip-item">
+          <span class="acc-k" id="today-label">Today</span>
+          <span class="acc-v" id="today-value"></span>
+          <span class="acc-muted" id="tz-hint"></span>
+        </div>
 
-          <div class="text-sm text-slate-600">
-            <span id="updated-label">Last updated</span>:
-            <span id="updated-value" class="font-medium">—</span>
-          </div>
+        <div class="acc-strip-item">
+          <span class="acc-k" id="updated-label">Last updated</span>
+          <span class="acc-v mono" id="updated-value">—</span>
         </div>
       </section>
 
       <!-- Today -->
-      <section class="mt-6">
-        <div class="flex items-end justify-between gap-2">
-          <h2 class="text-xl font-semibold" id="section-today">Happening today</h2>
-          <span class="text-xs text-slate-500" id="tz-hint"></span>
+      <section class="acc-section">
+        <div class="acc-section-head">
+          <div class="acc-section-title" id="section-today">Happening today</div>
+          <div class="acc-section-meta"></div>
         </div>
-
-        <div id="today-container" class="mt-3 space-y-3"></div>
+        <div id="today-container" class="acc-stack"></div>
       </section>
 
       <!-- Upcoming -->
-      <section class="mt-8">
-        <h2 class="text-xl font-semibold" id="section-upcoming">Upcoming</h2>
+      <section class="acc-section">
+        <div class="acc-section-head">
+          <div class="acc-section-title" id="section-upcoming">Upcoming</div>
+        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
+        <div class="acc-grid">
           <!-- Deadlines -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <h3 class="font-semibold" id="next-deadlines">Next deadlines</h3>
-              <span class="text-xs text-slate-500" id="deadlines-count"></span>
+          <div class="acc-panel">
+            <div class="acc-panel-head">
+              <div class="acc-panel-title" id="next-deadlines">Next deadlines</div>
+              <div class="acc-panel-meta mono" id="deadlines-count"></div>
             </div>
-            <div id="deadlines-container" class="mt-3 space-y-3"></div>
+            <div id="deadlines-container" class="acc-stack"></div>
           </div>
 
           <!-- Congresses -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <h3 class="font-semibold" id="next-congresses">Upcoming congresses</h3>
-              <span class="text-xs text-slate-500" id="congresses-count"></span>
+          <div class="acc-panel">
+            <div class="acc-panel-head">
+              <div class="acc-panel-title" id="next-congresses">Upcoming congresses</div>
+              <div class="acc-panel-meta mono" id="congresses-count"></div>
             </div>
-            <div id="congresses-container" class="mt-3 space-y-3"></div>
+            <div id="congresses-container" class="acc-stack"></div>
           </div>
         </div>
       </section>
 
-      <!-- Footer -->
-      <footer class="mt-10 text-xs text-slate-500">
-        <p id="footer-text">
+      <footer class="acc-footer">
+        <div id="footer-text">
           Built as a static GitHub Pages site. Data refreshes via GitHub Actions.
-        </p>
+        </div>
       </footer>
     </div>
 
