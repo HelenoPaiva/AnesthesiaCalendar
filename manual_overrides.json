@@ -1,0 +1,27 @@
+{
+  "events": [
+    {
+      "series": "COPA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-09-10",
+      "end_date": "2026-09-12",
+      "location": "São Paulo, Brazil",
+      "link": "https://example.com/copa",
+      "priority": 10,
+      "title": {
+        "en": "COPA 2026 — Congress",
+        "pt": "COPA 2026 — Congresso"
+      }
+    },
+    {
+      "series": "COPA",
+      "year": 2026,
+      "type": "early_bird_deadline",
+      "date": "2026-06-01",
+      "location": "—",
+      "link": "https://example.com/copa-registration",
+      "priority": 10
+    }
+  ]
+}
