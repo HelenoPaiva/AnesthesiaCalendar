@@ -1,0 +1,61 @@
+/* Small extras beyond Tailwind */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+}
+
+.badge-active {
+  background: rgb(224 231 255);
+  color: rgb(55 48 163);
+}
+
+.badge-missing {
+  background: rgb(254 243 199);
+  color: rgb(146 64 14);
+}
+
+.badge-ended {
+  background: rgb(241 245 249);
+  color: rgb(71 85 105);
+}
+
+.badge-manual {
+  background: rgb(220 252 231);
+  color: rgb(22 101 52);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  border: 1px solid rgb(226 232 240);
+  background: white;
+  color: rgb(15 23 42);
+}
+
+.chip:hover {
+  background: rgb(248 250 252);
+}
+
+.chip:disabled,
+.chip[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+}
