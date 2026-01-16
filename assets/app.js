@@ -1,10 +1,11 @@
 // assets/app.js
-// Stable, repo-friendly SPA logic:
+// SPA logic:
 // - EN default + PT toggle (persisted)
 // - User-system timezone for "today"
 // - Fetches data/events.json + data/i18n.json
-// - Renders "Today" + Upcoming Deadlines/Congresses
-// - Uses dashboard theme classes (acc-*)
+// - Renders Upcoming Deadlines/Congresses (no "Happening today" block)
+// - Color-coded cards by series
+// - "Last updated" shown as "X hours ago"
 // - Reminder chip generates ICS via assets/ics.js
 
 import { downloadICSForEvent } from "./ics.js";
@@ -29,7 +30,6 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  // safe for attributes; keep it simple
   return escapeHtml(s).replaceAll("`", "&#096;");
 }
 
@@ -48,7 +48,6 @@ function setActiveLangButton(lang) {
   const pt = $("lang-pt");
   if (!en || !pt) return;
 
-  // Matches acc-toggle styles; we just set inline background for active state
   const activeStyle = {
     background: "rgba(148, 163, 184, 0.14)",
     color: "rgba(226, 232, 240, 0.95)",
@@ -135,10 +134,6 @@ function isOngoing(ev, todayYMD) {
   return ev.type === "congress" && ev.start_date && ev.end_date && ev.start_date <= todayYMD && todayYMD <= ev.end_date;
 }
 
-function isTodayDeadline(ev, todayYMD) {
-  return !!ev.date && ev.date === todayYMD;
-}
-
 function isPastEvent(ev, todayYMD) {
   if (ev.type === "congress") return !!ev.end_date && ev.end_date < todayYMD;
   return !!ev.date && ev.date < todayYMD;
@@ -165,7 +160,6 @@ function sortByWhen(a, b) {
 }
 
 function t(i18n, path, lang, fallback) {
-  // path like ["ui","today"] or ["types","abstract_deadline"]
   let cur = i18n;
   for (const k of path) {
     if (!cur || typeof cur !== "object") return fallback;
@@ -179,20 +173,96 @@ function applyUIStrings(i18n, lang) {
   const subtitle = $("subtitle");
   const todayLabel = $("today-label");
   const updatedLabel = $("updated-label");
-  const sectionToday = $("section-today");
   const sectionUpcoming = $("section-upcoming");
   const nextDeadlines = $("next-deadlines");
   const nextCongresses = $("next-congresses");
   const footerText = $("footer-text");
 
+  // Hide the old "Happening today" block completely
+  const sectionToday = $("section-today");
+  const todayContainer = $("today-container");
+  if (sectionToday) sectionToday.style.display = "none";
+  if (todayContainer) todayContainer.style.display = "none";
+
   if (subtitle) subtitle.textContent = t(i18n, ["ui", "subtitle"], lang, "Upcoming deadlines and congress dates — auto-updated.");
   if (todayLabel) todayLabel.textContent = t(i18n, ["ui", "today"], lang, "Today");
   if (updatedLabel) updatedLabel.textContent = t(i18n, ["ui", "last_updated"], lang, "Last updated");
-  if (sectionToday) sectionToday.textContent = t(i18n, ["ui", "happening_today"], lang, "Happening today");
   if (sectionUpcoming) sectionUpcoming.textContent = t(i18n, ["ui", "upcoming"], lang, "Upcoming");
   if (nextDeadlines) nextDeadlines.textContent = t(i18n, ["ui", "next_deadlines"], lang, "Next deadlines");
   if (nextCongresses) nextCongresses.textContent = t(i18n, ["ui", "upcoming_congresses"], lang, "Upcoming congresses");
   if (footerText) footerText.textContent = t(i18n, ["ui", "footer"], lang, "Built as a static GitHub Pages site. Data refreshes via GitHub Actions.");
+}
+
+// human-readable "x hours ago" for last_updated
+function formatUpdatedAgo(iso, lang) {
+  if (!iso) return "—";
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return iso;
+
+  const now = new Date();
+  let diffMs = now.getTime() - dt.getTime();
+  if (diffMs < 0) diffMs = 0;
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  const isPt = lang === "pt";
+
+  if (seconds < 45) return isPt ? "agora mesmo" : "just now";
+  if (minutes < 60) {
+    const n = minutes;
+    if (isPt) return n === 1 ? "há 1 minuto" : `há ${n} minutos`;
+    return n === 1 ? "1 minute ago" : `${n} minutes ago`;
+  }
+  if (hours < 48) {
+    const n = hours;
+    if (isPt) return n === 1 ? "há 1 hora" : `há ${n} horas`;
+    return n === 1 ? "1 hour ago" : `${n} hours ago`;
+  }
+  const n = days;
+  if (isPt) return n === 1 ? "há 1 dia" : `há ${n} dias`;
+  return n === 1 ? "1 day ago" : `${n} days ago`;
+}
+
+function setTopStatus(i18n, data, lang) {
+  const todayValue = $("today-value");
+  const updatedValue = $("updated-value");
+  const tzHint = $("tz-hint");
+
+  if (todayValue) todayValue.textContent = computeTodayDisplay(lang);
+
+  if (updatedValue) {
+    const iso = data.generated_at || "";
+    updatedValue.textContent = iso ? formatUpdatedAgo(iso, lang) : "—";
+  }
+
+  const tz = timeZoneHint();
+  if (tzHint) tzHint.textContent = tz ? `(${tz})` : "";
+}
+
+// --- visual series differentiation ----------------------------------------
+
+function seriesClass(ev) {
+  const series = String(ev.series || "").toUpperCase();
+  switch (series) {
+    case "ASA":
+      return "acc-card-series-asa";
+    case "CBA":
+      return "acc-card-series-cba";
+    case "COPA":
+      return "acc-card-series-copa";
+    case "WCA":
+      return "acc-card-series-wca";
+    case "EUROANAESTHESIA":
+      return "acc-card-series-euro";
+    case "CLASA":
+      return "acc-card-series-clasa";
+    case "LASRA":
+      return "acc-card-series-lasra";
+    default:
+      return "acc-card-series-default";
+  }
 }
 
 function statusBadgeHTML(ev, i18n, lang) {
@@ -214,7 +284,6 @@ function typeTitle(ev, i18n, lang) {
   const year = ev.year ? String(ev.year) : "";
   const typeLabel = t(i18n, ["types", ev.type], lang, ev.type);
 
-  // Keep consistent: "ASA 2026 — Scientific abstracts deadline"
   const left = [series, year].filter(Boolean).join(" ");
   return left ? `${left} — ${typeLabel}` : typeLabel;
 }
@@ -234,20 +303,12 @@ function metaLineHTML(ev, i18n, lang, todayYMD) {
 
   let extra = "";
 
-  // Future countdown for single-day deadlines
   if (ev.type !== "congress" && ev.date && ev.date > todayYMD) {
     const d = daysUntil(ev.date);
     if (typeof d === "number") {
       const inText = t(i18n, ["ui", "in_days"], lang, "in {n} days").replace("{n}", String(d));
       extra += ` · <span class="acc-muted">${escapeHtml(inText)}</span>`;
     }
-  }
-
-  // Missing event: last seen tag line
-  if (ev.status === "missing" && ev.last_seen_at) {
-    const lastSeen = String(ev.last_seen_at).slice(0, 10);
-    const seenText = t(i18n, ["ui", "last_seen"], lang, "last seen {d}").replace("{d}", lastSeen);
-    extra += ` · <span style="color: rgba(245, 158, 11, 0.95)">${escapeHtml(seenText)}</span>`;
   }
 
   return `${escapeHtml(when)}${loc}${extra}`;
@@ -278,9 +339,10 @@ function cardHTML(ev, i18n, lang, todayYMD) {
   const badge = statusBadgeHTML(ev, i18n, lang);
   const meta = metaLineHTML(ev, i18n, lang, todayYMD);
   const actions = actionsHTML(ev, i18n, lang, todayYMD);
+  const seriesCls = seriesClass(ev);
 
   return `
-    <div class="acc-card">
+    <div class="acc-card ${seriesCls}">
       <div class="acc-card-head">
         <div class="min-w-0">
           <div class="acc-card-title break-words">${escapeHtml(title)}</div>
@@ -309,16 +371,9 @@ function renderList(container, items, i18n, lang, todayYMD, emptyText) {
   container.innerHTML = items.map((ev) => cardHTML(ev, i18n, lang, todayYMD)).join("");
 }
 
-function setTopStatus(i18n, data, lang) {
-  const todayValue = $("today-value");
-  const updatedValue = $("updated-value");
-  const tzHint = $("tz-hint");
-
-  if (todayValue) todayValue.textContent = computeTodayDisplay(lang);
-  if (updatedValue) updatedValue.textContent = data.generated_at ? String(data.generated_at) : "—";
-
-  const tz = timeZoneHint();
-  if (tzHint) tzHint.textContent = tz ? `(${tz})` : "";
+function setTopStatusCounts(deadlinesCount, congressesCount, upcomingDeadlines, upcomingCongresses) {
+  if (deadlinesCount) deadlinesCount.textContent = `${upcomingDeadlines.length}/10`;
+  if (congressesCount) congressesCount.textContent = `${upcomingCongresses.length}/10`;
 }
 
 function renderAll(i18n, data, lang) {
@@ -327,7 +382,6 @@ function renderAll(i18n, data, lang) {
   applyUIStrings(i18n, lang);
   setTopStatus(i18n, data, lang);
 
-  const todayContainer = $("today-container");
   const deadlinesContainer = $("deadlines-container");
   const congressesContainer = $("congresses-container");
   const deadlinesCount = $("deadlines-count");
@@ -337,34 +391,17 @@ function renderAll(i18n, data, lang) {
   all.sort(sortByWhen);
   window.__ACC_EVENTS__ = all;
 
-  // Today items: deadlines today OR congress ongoing
-  const todayItems = all.filter((ev) => isTodayDeadline(ev, todayYMD) || isOngoing(ev, todayYMD));
-
-  if (todayItems.length === 0) {
-    // next actionable (not past)
-    const next = all.find((ev) => !isPastEvent(ev, todayYMD));
-    const text = next
-      ? t(i18n, ["ui", "nothing_today_next"], lang, "Nothing today. Next: {x}").replace("{x}", typeTitle(next, i18n, lang))
-      : t(i18n, ["ui", "nothing_today"], lang, "Nothing today.");
-    renderEmpty(todayContainer, text);
-  } else {
-    renderList(todayContainer, todayItems, i18n, lang, todayYMD, "");
-  }
-
-  // Upcoming deadlines (non-congress) excluding past
   const upcomingDeadlines = all
     .filter((ev) => ev.type !== "congress")
     .filter((ev) => !isPastEvent(ev, todayYMD))
     .slice(0, 10);
 
-  // Upcoming congresses excluding past
   const upcomingCongresses = all
     .filter((ev) => ev.type === "congress")
     .filter((ev) => !isPastEvent(ev, todayYMD))
     .slice(0, 10);
 
-  if (deadlinesCount) deadlinesCount.textContent = `${upcomingDeadlines.length}/10`;
-  if (congressesCount) congressesCount.textContent = `${upcomingCongresses.length}/10`;
+  setTopStatusCounts(deadlinesCount, congressesCount, upcomingDeadlines, upcomingCongresses);
 
   renderList(
     deadlinesContainer,
@@ -386,7 +423,6 @@ function renderAll(i18n, data, lang) {
 }
 
 function bindGlobalHandlers(i18nRef) {
-  // Single delegated handler; stable even across rerenders.
   document.body.addEventListener("click", (e) => {
     const target = e.target;
     if (!target) return;
@@ -403,7 +439,6 @@ function bindGlobalHandlers(i18nRef) {
     const ev = events.find((x) => x.id === id);
     if (!ev) return;
 
-    // Language affects ICS titles; read current lang each click
     const lang = getLang();
     downloadICSForEvent(ev, i18nRef.current, lang);
   });
@@ -412,13 +447,11 @@ function bindGlobalHandlers(i18nRef) {
 async function main() {
   const [i18n, data] = await Promise.all([fetchJSON(I18N_URL), fetchJSON(DATA_URL)]);
 
-  // Keep i18n in a mutable ref for handlers
   const i18nRef = { current: i18n };
 
   let lang = getLang();
   setActiveLangButton(lang);
 
-  // Toggle buttons
   const enBtn = $("lang-en");
   const ptBtn = $("lang-pt");
   if (enBtn) {
@@ -437,15 +470,13 @@ async function main() {
   }
 
   bindGlobalHandlers(i18nRef);
-
-  // First render
   renderAll(i18nRef.current, data, lang);
 }
 
 main().catch((err) => {
   console.error(err);
 
-  const todayContainer = $("today-container");
+  const todayContainer = $("today-container") || $("deadlines-container");
   const msg = err?.message ? String(err.message) : String(err);
 
   if (todayContainer) {
