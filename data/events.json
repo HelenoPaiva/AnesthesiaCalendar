@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-16T17:34:30+00:00",
+  "generated_at": "2026-01-16T18:24:33+00:00",
   "events": [
     {
       "series": "ASA",
@@ -19,10 +19,7 @@
         "field": "general_session_window_open"
       },
       "source": "scraped",
-      "id": "asa-2025-other_deadline-3b6fded6c7",
-      "status": "ended",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2025-other_deadline-ce9e0d22be"
     },
     {
       "series": "ASA",
@@ -42,10 +39,7 @@
         "field": "general_session_window_close"
       },
       "source": "scraped",
-      "id": "asa-2025-other_deadline-c61544c4bf",
-      "status": "ended",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2025-other_deadline-3b6286a71f"
     },
     {
       "series": "ASA",
@@ -65,33 +59,7 @@
         "field": "pbl_window_open"
       },
       "source": "scraped",
-      "id": "asa-2026-other_deadline-7bde7107b7",
-      "status": "ended",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
-    },
-    {
-      "series": "ASA",
-      "year": 2026,
-      "type": "abstract_open",
-      "date": "2026-01-06",
-      "location": "—",
-      "link": "https://www.asahq.org/annualmeeting/education/submissions",
-      "priority": 10,
-      "title": {
-        "en": "ASA 2026 — Scientific abstracts open",
-        "pt": "ASA 2026 — Abertura de resumos científicos"
-      },
-      "evidence": {
-        "url": "https://www.asahq.org/annualmeeting/education/submissions",
-        "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
-        "field": "scientific_abstracts_window_open"
-      },
-      "source": "scraped",
-      "id": "asa-2026-abstract_open-5c91243031",
-      "status": "ended",
-      "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-other_deadline-fc3ca4f572"
     },
     {
       "series": "ASA",
@@ -111,34 +79,27 @@
         "field": "exhibits_window_open"
       },
       "source": "scraped",
-      "id": "asa-2026-other_deadline-b49cb8e6f9",
-      "status": "ended",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-other_deadline-cdf1372821"
     },
     {
       "series": "ASA",
       "year": 2026,
-      "type": "congress",
-      "start_date": "2026-01-25",
-      "end_date": "2026-01-31",
-      "location": "ASA Annual Meeting",
-      "link": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+      "type": "abstract_open",
+      "date": "2026-01-06",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
       "priority": 10,
       "title": {
-        "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-        "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
+        "en": "ASA 2026 — Scientific abstracts open",
+        "pt": "ASA 2026 — Abertura de resumos científicos"
       },
       "evidence": {
-        "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
-        "snippet": "January 25-31, 2026",
-        "field": "meeting_range"
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
+        "field": "scientific_abstracts_window_open"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-b4b28b95a5",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:30:36+00:00",
-      "last_seen_at": "2026-01-15T18:31:16+00:00"
+      "id": "asa-2026-abstract_open-ccadcdfc92"
     },
     {
       "series": "ASA",
@@ -158,10 +119,7 @@
         "field": "pbl_window_close"
       },
       "source": "scraped",
-      "id": "asa-2026-other_deadline-8dc96ed190",
-      "status": "active",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-other_deadline-9dce5e5da0"
     },
     {
       "series": "ASA",
@@ -182,33 +140,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-8ebc5818d5",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
-    },
-    {
-      "series": "ASA",
-      "year": 2026,
-      "type": "abstract_deadline",
-      "date": "2026-03-31",
-      "location": "—",
-      "link": "https://www.asahq.org/annualmeeting/education/submissions",
-      "priority": 10,
-      "title": {
-        "en": "ASA 2026 — Scientific abstracts deadline",
-        "pt": "ASA 2026 — Prazo final resumos científicos"
-      },
-      "evidence": {
-        "url": "https://www.asahq.org/annualmeeting/education/submissions",
-        "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
-        "field": "scientific_abstracts_window_close"
-      },
-      "source": "scraped",
-      "id": "asa-2026-abstract_deadline-a0255339f6",
-      "status": "active",
-      "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-congress-7575d4ef87"
     },
     {
       "series": "ASA",
@@ -228,10 +160,27 @@
         "field": "exhibits_window_close"
       },
       "source": "scraped",
-      "id": "asa-2026-other_deadline-417de89c6f",
-      "status": "active",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-other_deadline-7573c916dd"
+    },
+    {
+      "series": "ASA",
+      "year": 2026,
+      "type": "abstract_deadline",
+      "date": "2026-03-31",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 10,
+      "title": {
+        "en": "ASA 2026 — Scientific abstracts deadline",
+        "pt": "ASA 2026 — Prazo final resumos científicos"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific Abstracts: January 6 – March 31, 2026",
+        "field": "scientific_abstracts_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2026-abstract_deadline-b6a05d2c63"
     },
     {
       "series": "ASA",
@@ -252,10 +201,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-76e31a775b",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
+      "id": "asa-2026-congress-0111a94e74"
     },
     {
       "series": "ASA",
@@ -276,10 +222,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-3ecf64e391",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
+      "id": "asa-2026-congress-84468db32a"
     },
     {
       "series": "ASA",
@@ -299,10 +242,7 @@
         "field": "mcc_qi_window_close"
       },
       "source": "scraped",
-      "id": "asa-2026-other_deadline-9b62b1388a",
-      "status": "active",
-      "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-other_deadline-ca8f6e26a9"
     },
     {
       "series": "ASA",
@@ -323,10 +263,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-9fb2e9040a",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
+      "id": "asa-2026-congress-f8a5f7b11e"
     },
     {
       "series": "ASA",
@@ -347,43 +284,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-dc5b59e119",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "early_bird_deadline",
-      "date": "2026-06-01",
-      "location": "—",
-      "link": "https://example.com/copa-registration",
-      "priority": 10,
-      "source": "manual",
-      "id": "copa-2026-early_bird_deadline-8846da3b00",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:35:43+00:00"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-09-10",
-      "end_date": "2026-09-12",
-      "location": "São Paulo, Brazil",
-      "link": "https://example.com/copa",
-      "priority": 10,
-      "title": {
-        "en": "COPA 2026 — Congress",
-        "pt": "COPA 2026 — Congresso"
-      },
-      "source": "manual",
-      "id": "copa-2026-congress-9512d28f4c",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T17:11:38+00:00",
-      "last_seen_at": "2026-01-15T18:35:43+00:00"
+      "id": "asa-2026-congress-26cda6e3ab"
     },
     {
       "series": "ASA",
@@ -404,10 +305,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2026-congress-87151b58fa",
-      "status": "active",
-      "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T17:34:30+00:00"
+      "id": "asa-2026-congress-da8bd39c7f"
     },
     {
       "series": "ASA",
@@ -428,10 +326,7 @@
         "field": "meeting_range"
       },
       "source": "scraped",
-      "id": "asa-2027-congress-d076be6893",
-      "status": "missing",
-      "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T16:42:43+00:00"
+      "id": "asa-2027-congress-1ee4f4f5c2"
     }
   ]
 }
