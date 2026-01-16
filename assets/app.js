@@ -1,13 +1,4 @@
 // assets/app.js
-// SPA logic:
-// - EN default + PT toggle (persisted)
-// - User-system timezone for "today"
-// - Fetches data/events.json + data/i18n.json
-// - Renders Upcoming Deadlines/Congresses (no "Happening today" block)
-// - Color-coded cards by series
-// - "Last updated" shown as "X hours ago"
-// - Reminder chip generates ICS via assets/ics.js
-
 import { downloadICSForEvent } from "./ics.js";
 
 const DATA_URL = "./data/events.json";
@@ -84,25 +75,6 @@ function ymdTodayLocal() {
   return `${y}-${m}-${d}`;
 }
 
-function computeTodayDisplay(lang) {
-  const locale = localeFor(lang);
-  const now = new Date();
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "2-digit",
-  }).format(now);
-}
-
-function timeZoneHint() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-  } catch {
-    return "";
-  }
-}
-
 // Date-only parsing in local time (avoid Date("YYYY-MM-DD") UTC pitfalls)
 function parseYMDLocal(ymd) {
   const [y, m, d] = String(ymd).split("-").map((x) => parseInt(x, 10));
@@ -171,21 +143,13 @@ function t(i18n, path, lang, fallback) {
 
 function applyUIStrings(i18n, lang) {
   const subtitle = $("subtitle");
-  const todayLabel = $("today-label");
   const updatedLabel = $("updated-label");
   const sectionUpcoming = $("section-upcoming");
   const nextDeadlines = $("next-deadlines");
   const nextCongresses = $("next-congresses");
   const footerText = $("footer-text");
 
-  // Hide the old "Happening today" block completely
-  const sectionToday = $("section-today");
-  const todayContainer = $("today-container");
-  if (sectionToday) sectionToday.style.display = "none";
-  if (todayContainer) todayContainer.style.display = "none";
-
   if (subtitle) subtitle.textContent = t(i18n, ["ui", "subtitle"], lang, "Upcoming deadlines and congress dates — auto-updated.");
-  if (todayLabel) todayLabel.textContent = t(i18n, ["ui", "today"], lang, "Today");
   if (updatedLabel) updatedLabel.textContent = t(i18n, ["ui", "last_updated"], lang, "Last updated");
   if (sectionUpcoming) sectionUpcoming.textContent = t(i18n, ["ui", "upcoming"], lang, "Upcoming");
   if (nextDeadlines) nextDeadlines.textContent = t(i18n, ["ui", "next_deadlines"], lang, "Next deadlines");
@@ -225,20 +189,12 @@ function formatUpdatedAgo(iso, lang) {
   return n === 1 ? "1 day ago" : `${n} days ago`;
 }
 
-function setTopStatus(i18n, data, lang) {
-  const todayValue = $("today-value");
+function setTopStatus(data, lang) {
   const updatedValue = $("updated-value");
-  const tzHint = $("tz-hint");
+  if (!updatedValue) return;
 
-  if (todayValue) todayValue.textContent = computeTodayDisplay(lang);
-
-  if (updatedValue) {
-    const iso = data.generated_at || "";
-    updatedValue.textContent = iso ? formatUpdatedAgo(iso, lang) : "—";
-  }
-
-  const tz = timeZoneHint();
-  if (tzHint) tzHint.textContent = tz ? `(${tz})` : "";
+  const iso = data.generated_at || "";
+  updatedValue.textContent = iso ? formatUpdatedAgo(iso, lang) : "—";
 }
 
 // --- visual series differentiation ----------------------------------------
@@ -270,9 +226,7 @@ function statusBadgeHTML(ev, i18n, lang) {
   const label = t(i18n, ["status", status], lang, status);
 
   let cls = "badge badge-active";
-  if (status === "missing") cls = "badge badge-missing";
   if (status === "ended") cls = "badge badge-ended";
-  if (status === "manual") cls = "badge badge-manual";
 
   return `<span class="${cls}">${escapeHtml(label)}</span>`;
 }
@@ -303,7 +257,7 @@ function metaLineHTML(ev, i18n, lang, todayYMD) {
 
   let extra = "";
 
-  if (ev.type !== "congress" && ev.date && ev.date > todayYMD) {
+  if (ev.type !== "congress" && ev.date && ev.date >= todayYMD) {
     const d = daysUntil(ev.date);
     if (typeof d === "number") {
       const inText = t(i18n, ["ui", "in_days"], lang, "in {n} days").replace("{n}", String(d));
@@ -380,7 +334,7 @@ function renderAll(i18n, data, lang) {
   const todayYMD = ymdTodayLocal();
 
   applyUIStrings(i18n, lang);
-  setTopStatus(i18n, data, lang);
+  setTopStatus(data, lang);
 
   const deadlinesContainer = $("deadlines-container");
   const congressesContainer = $("congresses-container");
@@ -476,11 +430,11 @@ async function main() {
 main().catch((err) => {
   console.error(err);
 
-  const todayContainer = $("today-container") || $("deadlines-container");
+  const container = $("deadlines-container") || document.body;
   const msg = err?.message ? String(err.message) : String(err);
 
-  if (todayContainer) {
-    todayContainer.innerHTML = `
+  if (container) {
+    container.innerHTML = `
       <div class="acc-card" style="border-color: rgba(248, 113, 113, 0.55);">
         <div class="acc-card-title" style="color: rgba(248, 113, 113, 0.95);">Failed to load data.</div>
         <div class="acc-card-meta mono" style="color: rgba(226, 232, 240, 0.85); margin-top: 6px;">
