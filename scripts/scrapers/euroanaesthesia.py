@@ -7,39 +7,25 @@ from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
 
 
-MONTHS_EN_SHORT = {
-    "jan": 1,
-    "feb": 2,
-    "mar": 3,
-    "apr": 4,
+# Month names in English
+MONTHS_EN = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
     "may": 5,
-    "jun": 6,
-    "jul": 7,
-    "aug": 8,
-    "sep": 9,
-    "oct": 10,
-    "nov": 11,
-    "dec": 12,
-}
-
-MONTHS_PT = {
-    "janeiro": 1,
-    "fevereiro": 2,
-    "março": 3,
-    "marco": 3,
-    "abril": 4,
-    "maio": 5,
-    "junho": 6,
-    "julho": 7,
-    "agosto": 8,
-    "setembro": 9,
-    "outubro": 10,
-    "novembro": 11,
-    "dezembro": 12,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
 }
 
 
 def _fetch(url: str) -> str:
+    """HTTP GET with a decent User-Agent, return decoded HTML."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (compatible; AnesthesiaCalendarBot/1.0; "
@@ -47,7 +33,7 @@ def _fetch(url: str) -> str:
         )
     }
     req = Request(url, headers=headers)
-    with urlopen(req, timeout=20) as resp:  # nosec
+    with urlopen(req, timeout=20) as resp:  # nosec - GitHub Actions sandbox
         raw = resp.read()
     return raw.decode("utf-8", errors="ignore")
 
@@ -56,137 +42,190 @@ def _ymd(y: int, m: int, d: int) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
-def _from_esaic_home(url: str, warnings: List[str]) -> List[Dict[str, Any]]:
+def _parse_dd_mon_yyyy(date_str: str, warnings: List[str]) -> Tuple[int, int, int] | Tuple[None, None, None]:
     """
-    Parse ESAIC homepage snippet: :contentReference[oaicite:7]{index=7}
-
-      'Join us for Euroanaesthesia 2026 · 6-8 June 2026 | Rotterdam, The Netherlands'
+    Parse '5 December 2025' into (year, month, day).
+    Returns (None, None, None) on failure.
     """
-    html = _fetch(url)
-    text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
+    m = re.match(r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})", date_str.strip())
+    if not m:
+        warnings.append(f"[EUROANAESTHESIA] Could not parse date string: '{date_str}'")
+        return None, None, None
 
+    day = int(m.group(1))
+    month_name = m.group(2).lower()
+    year = int(m.group(3))
+
+    month = MONTHS_EN.get(month_name)
+    if not month:
+        warnings.append(f"[EUROANAESTHESIA] Unknown month name: '{month_name}'")
+        return None, None, None
+
+    return year, month, day
+
+
+def _extract_block(text: str, warnings: List[str]) -> str:
+    """
+    Extract the 'Important dates' block from the page text, if possible.
+    Fallback to the whole text if the boundaries are not found.
+    """
     m = re.search(
-        r"Euroanaesthesia\s*2026[^0-9]+(\d{1,2})\s*[–\-]\s*(\d{1,2})\s+([A-Za-z]{3,})\s+(20\d{2})",
+        r"Important dates(.*?)(Euroanaesthesia\s+\d{4}\s+will be held|Euroanaesthesia is recognised)",
         text,
         flags=re.IGNORECASE,
     )
     if not m:
-        warnings.append("[EUROANAESTHESIA] Could not parse '6-8 June 2026' on ESAIC homepage.")
-        return []
-
-    d1 = int(m.group(1))
-    d2 = int(m.group(2))
-    month_name = m.group(3)[:3].lower()
-    year = int(m.group(4))
-
-    month = MONTHS_EN_SHORT.get(month_name)
-    if not month:
-        warnings.append(f"[EUROANAESTHESIA] Unknown EN month abbrev: {month_name}")
-        return []
-
-    start_date = _ymd(year, month, d1)
-    end_date = _ymd(year, month, d2)
-
-    return [
-        {
-            "series": "EUROANAESTHESIA",
-            "year": year,
-            "type": "congress",
-            "start_date": start_date,
-            "end_date": end_date,
-            "location": "Rotterdam, The Netherlands",
-            "link": "https://euroanaesthesia.org/2026/",
-            "priority": 8,
-            "title": {
-                "en": "Euroanaesthesia 2026 — ESAIC Annual Congress",
-                "pt": "Euroanaesthesia 2026 — Congresso anual da ESAIC",
-            },
-            "source": "scraped",
-        }
-    ]
-
-
-def _from_sba_events(url: str, warnings: List[str]) -> List[Dict[str, Any]]:
-    """
-    SBA 'Congressos e eventos' snippet: :contentReference[oaicite:8]{index=8}
-
-      'Euroanaesthesia 2026
-       6 a 8 de junho
-       Rotterdam - Holanda'
-    """
-    html = _fetch(url)
-    text = re.sub(r"\s+", " ", html, flags=re.DOTALL).lower()
-
-    block_match = re.search(r"euroanaesthesia\s*2026[^<]{0,160}", text)
-    if not block_match:
-        warnings.append("[EUROANAESTHESIA] Could not find 'Euroanaesthesia 2026' block on SBA page.")
-        return []
-
-    block = block_match.group(0)
-
-    m = re.search(
-        r"(\d{1,2})\s*a\s*(\d{1,2})\s*de\s*([a-zç]+)",
-        block,
-    )
-    if not m:
-        warnings.append("[EUROANAESTHESIA] Could not parse PT date range '6 a 8 de junho' on SBA page.")
-        return []
-
-    d1 = int(m.group(1))
-    d2 = int(m.group(2))
-    month_name = m.group(3).replace("ç", "c")
-    month = MONTHS_PT.get(month_name)
-    if not month:
-        warnings.append(f"[EUROANAESTHESIA] Unknown PT month name: {month_name}")
-        return []
-
-    year = 2026  # inferred from context
-    start_date = _ymd(year, month, d1)
-    end_date = _ymd(year, month, d2)
-
-    return [
-        {
-            "series": "EUROANAESTHESIA",
-            "year": year,
-            "type": "congress",
-            "start_date": start_date,
-            "end_date": end_date,
-            "location": "Rotterdam, The Netherlands",
-            "link": "https://euroanaesthesia.org/2026/",
-            "priority": 7,
-            "title": {
-                "en": "Euroanaesthesia 2026 — ESAIC Annual Congress",
-                "pt": "Euroanaesthesia 2026 — Congresso anual da ESAIC",
-            },
-            "source": "scraped",
-        }
-    ]
+        warnings.append("[EUROANAESTHESIA] Could not isolate 'Important dates' block; using full page text.")
+        return text
+    return m.group(1)
 
 
 def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """
+    Scrape Euroanaesthesia key dates from euroanaesthesia.org/2026/.
+
+    Produces:
+      - congress (start_date, end_date)
+      - abstract_open
+      - abstract_deadline
+      - early_bird_deadline
+      - registration_deadline (late registration closes)
+    """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
     if not urls:
         return [], ["[EUROANAESTHESIA] No URLs configured in sources.json."]
 
-    esaic_url = next((u for u in urls if "esaic.org" in u), None)
-    sba_url = next((u for u in urls if "sbahq.org" in u), None)
+    base_url = urls[0]
+
+    try:
+        html = _fetch(base_url)
+    except Exception as e:  # pragma: no cover - network
+        return [], [f"[EUROANAESTHESIA] Failed to fetch {base_url}: {e}"]
+
+    # Flatten whitespace to make regex easier
+    text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
+    block = _extract_block(text, warnings)
 
     events: List[Dict[str, Any]] = []
 
-    if esaic_url:
-        try:
-            events = _from_esaic_home(esaic_url, warnings)
-        except Exception as e:  # pragma: no cover
-            warnings.append(f"[EUROANAESTHESIA] Error scraping ESAIC homepage: {e}")
+    # ----------------------------------------------------------------------
+    # 1) Congress dates: "Congress Dates 6-8 June 2026"
+    # ----------------------------------------------------------------------
+    m_cong = re.search(
+        r"Congress Dates\s+(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})",
+        block,
+        flags=re.IGNORECASE,
+    )
 
-    if not events and sba_url:
-        try:
-            events = _from_sba_events(sba_url, warnings)
-        except Exception as e:  # pragma: no cover
-            warnings.append(f"[EUROANAESTHESIA] Error scraping SBA 'Congressos e eventos': {e}")
+    congress_year: int | None = None
+
+    if m_cong:
+        d1 = int(m_cong.group(1))
+        d2 = int(m_cong.group(2))
+        month_name = m_cong.group(3).lower()
+        year = int(m_cong.group(4))
+
+        mnum = MONTHS_EN.get(month_name)
+        if mnum is None:
+            warnings.append(f"[EUROANAESTHESIA] Unknown month in congress date: '{month_name}'")
+        else:
+            congress_year = year
+            start_date = _ymd(year, mnum, d1)
+            end_date = _ymd(year, mnum, d2)
+            events.append(
+                {
+                    "series": "EUROANAESTHESIA",
+                    "year": year,
+                    "type": "congress",
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "location": "Rotterdam, The Netherlands",
+                    "link": base_url,
+                    "priority": 8,
+                    "title": {
+                        "en": f"Euroanaesthesia {year} — ESAIC Annual Congress",
+                        "pt": f"Euroanaesthesia {year} — Congresso anual da ESAIC",
+                    },
+                    "source": "scraped",
+                }
+            )
+    else:
+        warnings.append("[EUROANAESTHESIA] Could not find congress date pattern 'Congress Dates 6-8 June 2026'.")
+
+    # If we didn't get a congress year, we still try to parse deadlines,
+    # but we fall back to using the date's own year as 'year'.
+    # (Better to show correct dates than nothing.)
+    def add_deadline(label: str, etype: str, title_en: str, title_pt: str) -> None:
+        nonlocal congress_year, events
+
+        # label is literal text that appears before the date, e.g. "Abstract submission closes"
+        pattern = rf"{label}\s+(\d{{1,2}}\s+[A-Za-z]+\s+20\d{{2}})"
+        m = re.search(pattern, block, flags=re.IGNORECASE)
+        if not m:
+            warnings.append(f"[EUROANAESTHESIA] Did not find date for label '{label}'.")
+            return
+
+        date_str = m.group(1)
+        y, mnum, d = _parse_dd_mon_yyyy(date_str, warnings)
+        if y is None or mnum is None or d is None:
+            return
+
+        date_ymd = _ymd(y, mnum, d)
+        year_for_event = congress_year or y
+
+        events.append(
+            {
+                "series": "EUROANAESTHESIA",
+                "year": year_for_event,
+                "type": etype,
+                "date": date_ymd,
+                "location": "Rotterdam, The Netherlands",
+                "link": base_url,
+                "priority": 8,
+                "title": {"en": title_en, "pt": title_pt},
+                "source": "scraped",
+            }
+        )
+
+    # ----------------------------------------------------------------------
+    # 2) Key deadlines inside "Important dates"
+    #    Based exactly on the text from euroanaesthesia.org/2026/
+    # ----------------------------------------------------------------------
+
+    # Abstract submission opens (November 2025)
+    add_deadline(
+        label="Abstract submission opens",
+        etype="abstract_open",
+        title_en="Euroanaesthesia 2026 — Abstract submission opens",
+        title_pt="Euroanaesthesia 2026 — Abertura para submissão de resumos",
+    )
+
+    # Abstract submission closes (December 2025)
+    add_deadline(
+        label="Abstract submission closes",
+        etype="abstract_deadline",
+        title_en="Euroanaesthesia 2026 — Abstract submission deadline",
+        title_pt="Euroanaesthesia 2026 — Prazo final para submissão de resumos",
+    )
+
+    # Early registration closes (February 2026)
+    add_deadline(
+        label="Early registration closes (Physical congress)",
+        etype="early_bird_deadline",
+        title_en="Euroanaesthesia 2026 — Early registration deadline",
+        title_pt="Euroanaesthesia 2026 — Prazo para inscrição early-bird",
+    )
+
+    # Late registration closes (June 2026)
+    add_deadline(
+        label="Late registration closes (Physical congress)",
+        etype="registration_deadline",
+        title_en="Euroanaesthesia 2026 — Late registration deadline",
+        title_pt="Euroanaesthesia 2026 — Prazo para inscrição tardia",
+    )
 
     if not events and not warnings:
-        warnings.append("[EUROANAESTHESIA] No events found from any configured URL.")
+        warnings.append("[EUROANAESTHESIA] No events produced from Euroanaesthesia page (regex may need update).")
 
     return events, warnings
