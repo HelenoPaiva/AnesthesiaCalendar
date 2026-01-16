@@ -1,91 +1,61 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Anesthesia Congress Calendar</title>
-
-    <!-- Tailwind CDN (MVP) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
 
-  <body class="acc-bg acc-text">
-    <div class="acc-wrap">
-      <!-- Top bar -->
-      <header class="acc-topbar">
-        <div class="acc-titleblock">
-          <div class="acc-title">Anesthesia Congress Calendar</div>
-          <div class="acc-subtitle" id="subtitle">
+  <body>
+    <div class="wrap">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="title">Anesthesia Congress Calendar</div>
+          <div id="subtitle" class="subtitle">
             Upcoming deadlines and congress dates — auto-updated.
           </div>
         </div>
 
-        <div class="acc-actions">
-          <div class="acc-sep"></div>
-
-          <div class="acc-toggle" role="group" aria-label="Language toggle">
-            <button id="lang-en" class="acc-toggle-btn" type="button">EN</button>
-            <button id="lang-pt" class="acc-toggle-btn" type="button">PT</button>
+        <div class="topbar-right">
+          <div class="lang-switch">
+            <button id="lang-en" class="lang-btn" type="button">EN</button>
+            <button id="lang-pt" class="lang-btn" type="button">PT</button>
           </div>
         </div>
       </header>
 
-      <!-- Status strip -->
-      <section class="acc-strip">
-        <div class="acc-strip-item">
-          <span class="acc-k" id="today-label">Today</span>
-          <span class="acc-v" id="today-value"></span>
-          <span class="acc-muted" id="tz-hint"></span>
+      <!-- Status row: ONLY "Last updated" chip, aligned left -->
+      <div class="status-row">
+        <div class="status-chip">
+          <span id="updated-label" class="status-label">Last updated</span>
+          <span id="updated-value" class="status-value">—</span>
         </div>
+      </div>
 
-        <div class="acc-strip-item">
-          <span class="acc-k" id="updated-label">Last updated</span>
-          <span class="acc-v mono" id="updated-value">—</span>
-        </div>
-      </section>
+      <section class="section">
+        <div id="section-upcoming" class="section-title">Upcoming</div>
 
-      <!-- Today -->
-      <section class="acc-section">
-        <div class="acc-section-head">
-          <div class="acc-section-title" id="section-today">Happening today</div>
-          <div class="acc-section-meta"></div>
-        </div>
-        <div id="today-container" class="acc-stack"></div>
-      </section>
-
-      <!-- Upcoming -->
-      <section class="acc-section">
-        <div class="acc-section-head">
-          <div class="acc-section-title" id="section-upcoming">Upcoming</div>
-        </div>
-
-        <div class="acc-grid">
-          <!-- Deadlines -->
-          <div class="acc-panel">
-            <div class="acc-panel-head">
-              <div class="acc-panel-title" id="next-deadlines">Next deadlines</div>
-              <div class="acc-panel-meta mono" id="deadlines-count"></div>
+        <div class="grid">
+          <div class="panel">
+            <div class="panel-head">
+              <div id="next-deadlines" class="panel-title">Next deadlines</div>
+              <div id="deadlines-count" class="panel-count">0/10</div>
             </div>
-            <div id="deadlines-container" class="acc-stack"></div>
+            <div id="deadlines-container" class="panel-body"></div>
           </div>
 
-          <!-- Congresses -->
-          <div class="acc-panel">
-            <div class="acc-panel-head">
-              <div class="acc-panel-title" id="next-congresses">Upcoming congresses</div>
-              <div class="acc-panel-meta mono" id="congresses-count"></div>
+          <div class="panel">
+            <div class="panel-head">
+              <div id="next-congresses" class="panel-title">Upcoming congresses</div>
+              <div id="congresses-count" class="panel-count">0/10</div>
             </div>
-            <div id="congresses-container" class="acc-stack"></div>
+            <div id="congresses-container" class="panel-body"></div>
           </div>
         </div>
       </section>
 
-      <footer class="acc-footer">
+      <footer class="footer">
         <div id="footer-text">
           Built as a static GitHub Pages site. Data refreshes via GitHub Actions.
         </div>
@@ -95,3 +65,4 @@
     <script type="module" src="./assets/app.js"></script>
   </body>
 </html>
+
