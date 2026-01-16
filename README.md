@@ -16,7 +16,6 @@ The site updates automatically via GitHub Actions and requires **no manual data 
 ## 🌐 Live version
 
 👉 **https://helenopaiva.github.io/AnesthesiaCalendar/**  
-*(If you fork or rename the repository, this URL will change accordingly.)*
 
 ---
 
