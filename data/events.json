@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-16T15:34:32+00:00",
+  "generated_at": "2026-01-16T16:42:43+00:00",
   "events": [
     {
       "series": "ASA",
@@ -22,7 +22,7 @@
       "id": "asa-2025-other_deadline-3b6fded6c7",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -45,7 +45,7 @@
       "id": "asa-2025-other_deadline-c61544c4bf",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -68,7 +68,7 @@
       "id": "asa-2026-other_deadline-7bde7107b7",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -91,7 +91,7 @@
       "id": "asa-2026-abstract_open-5c91243031",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -114,7 +114,7 @@
       "id": "asa-2026-other_deadline-b49cb8e6f9",
       "status": "ended",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -161,7 +161,7 @@
       "id": "asa-2026-other_deadline-8dc96ed190",
       "status": "active",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -183,9 +183,9 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-8ebc5818d5",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -208,7 +208,7 @@
       "id": "asa-2026-abstract_deadline-a0255339f6",
       "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -231,7 +231,7 @@
       "id": "asa-2026-other_deadline-417de89c6f",
       "status": "active",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -253,9 +253,9 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-76e31a775b",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -277,9 +277,9 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-3ecf64e391",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -302,7 +302,7 @@
       "id": "asa-2026-other_deadline-9b62b1388a",
       "status": "active",
       "first_seen_at": "2026-01-15T18:53:50+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -324,9 +324,9 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-9fb2e9040a",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -348,9 +348,9 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-dc5b59e119",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "COPA",
@@ -407,7 +407,7 @@
       "id": "asa-2026-congress-87151b58fa",
       "status": "active",
       "first_seen_at": "2026-01-15T18:11:12+00:00",
-      "last_seen_at": "2026-01-16T15:34:32+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     },
     {
       "series": "ASA",
@@ -429,9 +429,9 @@
       },
       "source": "scraped",
       "id": "asa-2027-congress-d076be6893",
-      "status": "missing",
+      "status": "active",
       "first_seen_at": "2026-01-15T18:52:42+00:00",
-      "last_seen_at": "2026-01-16T11:29:08+00:00"
+      "last_seen_at": "2026-01-16T16:42:43+00:00"
     }
   ]
 }
