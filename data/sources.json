@@ -19,7 +19,8 @@
       "series": "CBA",
       "priority": 10,
       "urls": [
-        "https://cba2026.com.br/"
+        "https://saesp.org.br/educacao-e-eventos/eventos-apoiados",
+        "https://www.levitatur.com.br/cba-2026-71-congresso-brasileiro-de-anestesiologia/en-gb/1445"
       ]
     },
 
@@ -27,7 +28,6 @@
       "series": "WCA",
       "priority": 9,
       "urls": [
-        "https://wfsahq.org/our-work/world-congress/",
         "https://wcacongress.org/"
       ]
     },
@@ -36,8 +36,8 @@
       "series": "EUROANAESTHESIA",
       "priority": 8,
       "urls": [
-        "https://esaic.org/events/",
-        "https://euroanaesthesia.org/2026/"
+        "https://esaic.org/",
+        "https://www.sbahq.org/categoria_agenda/congressos-e-eventos/"
       ]
     },
 
