@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-01-16T20:05:14+00:00",
+  "updated_at": "2026-01-16T20:06:06+00:00",
   "items": {
     "asa-2026-congress-da8bd39c7f": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -29,7 +29,7 @@
     },
     "asa-2025-other_deadline-ce9e0d22be": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -54,7 +54,7 @@
     },
     "asa-2025-other_deadline-3b6286a71f": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -79,7 +79,7 @@
     },
     "asa-2026-other_deadline-cdf1372821": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -104,7 +104,7 @@
     },
     "asa-2026-other_deadline-7573c916dd": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -129,7 +129,7 @@
     },
     "asa-2026-other_deadline-9dce5e5da0": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -154,7 +154,7 @@
     },
     "asa-2026-other_deadline-ca8f6e26a9": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -179,7 +179,7 @@
     },
     "asa-2026-other_deadline-fc3ca4f572": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -204,7 +204,7 @@
     },
     "asa-2026-abstract_open-ccadcdfc92": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -229,7 +229,7 @@
     },
     "asa-2026-abstract_deadline-b6a05d2c63": {
       "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
+      "last_seen_at": "2026-01-16T20:06:06+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -251,35 +251,13 @@
         "source": "scraped",
         "id": "asa-2026-abstract_deadline-b6a05d2c63"
       }
-    },
-    "cba-2026-congress-19f34829a0": {
-      "first_seen_at": "2026-01-16T20:03:18+00:00",
-      "last_seen_at": "2026-01-16T20:05:14+00:00",
-      "status": "active",
-      "event": {
-        "series": "CBA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-04-15",
-        "end_date": "2026-04-19",
-        "location": "Fortaleza, CE, Brazil",
-        "link": "https://saesp.org.br/educacao-e-eventos/eventos-apoiados",
-        "priority": 10,
-        "title": {
-          "en": "CBA 2026 — Brazilian Congress of Anaesthesiology",
-          "pt": "CBA 2026 — Congresso Brasileiro de Anestesiologia"
-        },
-        "source": "scraped",
-        "id": "cba-2026-congress-19f34829a0"
-      }
     }
   },
   "warnings": [
+    "[CBA] No URLs configured in sources.json.",
     "[COPA] No source URLs configured in data/sources.json.",
-    "[WCA] Could not find '15-19 April 2026 – Congress' pattern on wcacongress.org.",
-    "[WCA] No events produced from wcacongress.org (regex likely needs update).",
-    "[EUROANAESTHESIA] Could not parse '6-8 June 2026' on ESAIC homepage.",
-    "[EUROANAESTHESIA] Could not parse PT date range '6 a 8 de junho' on SBA page.",
+    "[WCA] No URLs configured in sources.json.",
+    "[EUROANAESTHESIA] No URLs configured in sources.json.",
     "[CLASA] No source URLs configured in data/sources.json.",
     "[LASRA] No source URLs configured in data/sources.json."
   ]

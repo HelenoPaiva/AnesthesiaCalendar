@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-16T20:05:14+00:00",
+  "generated_at": "2026-01-16T20:06:06+00:00",
   "events": [
     {
       "series": "ASA",
@@ -201,22 +201,6 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-da8bd39c7f"
-    },
-    {
-      "series": "CBA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-04-15",
-      "end_date": "2026-04-19",
-      "location": "Fortaleza, CE, Brazil",
-      "link": "https://saesp.org.br/educacao-e-eventos/eventos-apoiados",
-      "priority": 10,
-      "title": {
-        "en": "CBA 2026 — Brazilian Congress of Anaesthesiology",
-        "pt": "CBA 2026 — Congresso Brasileiro de Anestesiologia"
-      },
-      "source": "scraped",
-      "id": "cba-2026-congress-19f34829a0"
     }
   ]
 }
