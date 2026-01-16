@@ -18,30 +18,43 @@
     {
       "series": "CBA",
       "priority": 10,
-      "urls": []
+      "urls": [
+        "https://saesp.org.br/educacao-e-eventos/eventos-apoiados",
+        "https://www.levitatur.com.br/cba-2026-71-congresso-brasileiro-de-anestesiologia/en-gb/1445"
+      ]
     },
-    {
-      "series": "COPA",
-      "priority": 7,
-      "urls": []
-    },
+
     {
       "series": "WCA",
       "priority": 9,
-      "urls": []
+      "urls": [
+        "https://wcacongress.org/"
+      ]
     },
+
     {
       "series": "EUROANAESTHESIA",
       "priority": 8,
-      "urls": []
+      "urls": [
+        "https://esaic.org/",
+        "https://www.sbahq.org/categoria_agenda/congressos-e-eventos/"
+      ]
     },
+
     {
       "series": "CLASA",
       "priority": 7,
       "urls": []
     },
+
     {
       "series": "LASRA",
+      "priority": 7,
+      "urls": []
+    },
+
+    {
+      "series": "COPA",
       "priority": 7,
       "urls": []
     }
