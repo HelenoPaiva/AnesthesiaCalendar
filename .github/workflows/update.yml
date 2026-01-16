@@ -36,7 +36,8 @@ jobs:
 
       - name: Run updater
         run: |
-          python scripts/update.py
+          # Run as a package so `scripts.*` imports work
+          python -m scripts.update
 
       - name: Commit changes (if any)
         env:
