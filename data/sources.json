@@ -18,30 +18,43 @@
     {
       "series": "CBA",
       "priority": 10,
-      "urls": []
+      "urls": [
+        "https://cba2026.com.br/"
+      ]
     },
-    {
-      "series": "COPA",
-      "priority": 10,
-      "urls": []
-    },
+
     {
       "series": "WCA",
-      "priority": 10,
-      "urls": []
+      "priority": 9,
+      "urls": [
+        "https://wfsahq.org/our-work/world-congress/",
+        "https://wcacongress.org/"
+      ]
     },
+
     {
       "series": "EUROANAESTHESIA",
-      "priority": 7,
-      "urls": []
+      "priority": 8,
+      "urls": [
+        "https://esaic.org/events/",
+        "https://euroanaesthesia.org/2026/"
+      ]
     },
+
     {
       "series": "CLASA",
       "priority": 7,
       "urls": []
     },
+
     {
       "series": "LASRA",
+      "priority": 7,
+      "urls": []
+    },
+
+    {
+      "series": "COPA",
       "priority": 7,
       "urls": []
     }
