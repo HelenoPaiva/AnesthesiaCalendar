@@ -1,44 +1,67 @@
 name: Update anesthesia congress calendar data
 
 on:
+  # Manual trigger
   workflow_dispatch:
+  # Optional: scheduled run (04:00 UTC every day)
   schedule:
-    # Hourly (best-effort timing by GitHub)
-    - cron: "10 * * * *"
-  push:
-    branches: ["main"]
+    - cron: "0 4 * * *"
 
 permissions:
   contents: write
 
-concurrency:
-  group: "data-update"
-  cancel-in-progress: true
-
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Need full history so rebase can work
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # Optional – only runs if requirements.txt exists
+      - name: Install dependencies
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       - name: Run updater
         run: |
-          python -m scripts.update
+          python scripts/update.py
 
       - name: Commit changes (if any)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
+
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add data/events.json data/ledger.json
+
+          # Stage generated files (adjust paths if you ever change them)
+          git add data/events.json data/ledger.json || true
+
+          # If nothing changed, stop here
           if git diff --cached --quiet; then
-            echo "No changes."
-          else
-            git commit -m "Update events data"
-            git push
+            echo "No changes to commit."
+            exit 0
           fi
+
+          git commit -m "Update events data"
+
+          # Make sure we're rebased onto the latest main to avoid
+          # '[rejected] main -> main (fetch first)' errors
+          git fetch origin main
+          git rebase origin/main
+
+          # Push updated main back to GitHub
+          git push origin HEAD:main
