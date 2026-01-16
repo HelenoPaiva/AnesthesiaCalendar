@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-01-16T19:15:30+00:00",
+  "updated_at": "2026-01-16T19:15:51+00:00",
   "items": {
     "asa-2026-congress-da8bd39c7f": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -29,7 +29,7 @@
     },
     "asa-2025-other_deadline-ce9e0d22be": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -54,7 +54,7 @@
     },
     "asa-2025-other_deadline-3b6286a71f": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -79,7 +79,7 @@
     },
     "asa-2026-other_deadline-cdf1372821": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -104,7 +104,7 @@
     },
     "asa-2026-other_deadline-7573c916dd": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -129,7 +129,7 @@
     },
     "asa-2026-other_deadline-9dce5e5da0": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -154,7 +154,7 @@
     },
     "asa-2026-other_deadline-ca8f6e26a9": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -179,7 +179,7 @@
     },
     "asa-2026-other_deadline-fc3ca4f572": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -204,7 +204,7 @@
     },
     "asa-2026-abstract_open-ccadcdfc92": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -229,7 +229,7 @@
     },
     "asa-2026-abstract_deadline-b6a05d2c63": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T19:15:30+00:00",
+      "last_seen_at": "2026-01-16T19:15:51+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -258,6 +258,7 @@
     "[COPA] No source URLs configured in data/sources.json.",
     "[WCA] Could not find 19th WCA 2026 block on WFSA page.",
     "[WCA] No key dates matched on wcacongress.org (regex may need update).",
+    "[EUROANAESTHESIA] Could not find 'Euroanaesthesia 2026' block on ESAIC events page.",
     "[CLASA] No source URLs configured in data/sources.json.",
     "[LASRA] No source URLs configured in data/sources.json."
   ]
