@@ -20,26 +20,33 @@
       "priority": 10,
       "urls": []
     },
+
     {
       "series": "COPA",
       "priority": 7,
       "urls": []
     },
+
     {
       "series": "WCA",
       "priority": 9,
       "urls": []
     },
+
     {
       "series": "EUROANAESTHESIA",
       "priority": 8,
-      "urls": []
+      "urls": [
+        "https://euroanaesthesia.org/2026/"
+      ]
     },
+
     {
       "series": "CLASA",
       "priority": 7,
       "urls": []
     },
+
     {
       "series": "LASRA",
       "priority": 7,
