@@ -1,139 +1,9 @@
 {
-  "updated_at": "2026-01-16T18:56:06+00:00",
+  "updated_at": "2026-01-16T18:59:12+00:00",
   "items": {
-    "asa-2026-congress-7575d4ef87": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-03-27",
-        "end_date": "2026-03-29",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "March 27-29, 2026",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2026-congress-7575d4ef87"
-      }
-    },
-    "asa-2026-congress-0111a94e74": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-04-16",
-        "end_date": "2026-04-18",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "April 16-18, 2026",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2026-congress-0111a94e74"
-      }
-    },
-    "asa-2026-congress-84468db32a": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-04-23",
-        "end_date": "2026-04-26",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "April 23-26, 2026",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2026-congress-84468db32a"
-      }
-    },
-    "asa-2026-congress-f8a5f7b11e": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-05-01",
-        "end_date": "2026-05-03",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "May 1-3, 2026",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2026-congress-f8a5f7b11e"
-      }
-    },
-    "asa-2026-congress-26cda6e3ab": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-05-04",
-        "end_date": "2026-05-08",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "May 4-8, 2026",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2026-congress-26cda6e3ab"
-      }
-    },
     "asa-2026-congress-da8bd39c7f": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -157,35 +27,9 @@
         "id": "asa-2026-congress-da8bd39c7f"
       }
     },
-    "asa-2027-congress-1ee4f4f5c2": {
-      "first_seen_at": "2026-01-16T18:56:06+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
-      "status": "active",
-      "event": {
-        "series": "ASA",
-        "year": 2027,
-        "type": "congress",
-        "start_date": "2027-03-05",
-        "end_date": "2027-03-07",
-        "location": "ASA Annual Meeting",
-        "link": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-        "priority": 10,
-        "title": {
-          "en": "ANESTHESIOLOGY 2027 — ASA Annual Meeting",
-          "pt": "ANESTHESIOLOGY 2027 — Congresso anual da ASA"
-        },
-        "evidence": {
-          "url": "https://anesfacdev.massgeneralbrigham.org/national-meetings-and-presentations/",
-          "snippet": "March 5-7, 2027",
-          "field": "meeting_range"
-        },
-        "source": "scraped",
-        "id": "asa-2027-congress-1ee4f4f5c2"
-      }
-    },
     "asa-2025-other_deadline-ce9e0d22be": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -210,7 +54,7 @@
     },
     "asa-2025-other_deadline-3b6286a71f": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -235,7 +79,7 @@
     },
     "asa-2026-other_deadline-cdf1372821": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -260,7 +104,7 @@
     },
     "asa-2026-other_deadline-7573c916dd": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -285,7 +129,7 @@
     },
     "asa-2026-other_deadline-9dce5e5da0": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -310,7 +154,7 @@
     },
     "asa-2026-other_deadline-ca8f6e26a9": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -335,7 +179,7 @@
     },
     "asa-2026-other_deadline-fc3ca4f572": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -360,7 +204,7 @@
     },
     "asa-2026-abstract_open-ccadcdfc92": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -385,7 +229,7 @@
     },
     "asa-2026-abstract_deadline-b6a05d2c63": {
       "first_seen_at": "2026-01-16T18:24:33+00:00",
-      "last_seen_at": "2026-01-16T18:56:06+00:00",
+      "last_seen_at": "2026-01-16T18:59:12+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
