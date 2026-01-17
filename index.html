@@ -1,68 +1,100 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-locale="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <title>Anesthesia Congress Calendar</title>
-    <link rel="stylesheet" href="./assets/styles.css" />
+
+    <meta
+      name="description"
+      content="Upcoming deadlines and congress dates in anesthesiology — auto-updated."
+    />
+
+    <link rel="stylesheet" href="styles.css" />
   </head>
-
   <body>
-    <div class="wrap">
-      <header class="topbar">
-        <div class="topbar-left">
-          <div class="title">Anesthesia Congress Calendar</div>
-          <div id="subtitle" class="subtitle">
+    <div class="page">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <h1 class="app-title">Anesthesia Congress Calendar</h1>
+          <p class="app-subtitle">
             Upcoming deadlines and congress dates — auto-updated.
-          </div>
+          </p>
         </div>
-
-        <div class="topbar-right">
-          <div class="lang-switch">
-            <button id="lang-en" class="lang-btn" type="button">EN</button>
-            <button id="lang-pt" class="lang-btn" type="button">PT</button>
+        <div class="header-right">
+          <div class="lang-toggle">
+            <button
+              class="lang-toggle-btn lang-toggle-btn--active"
+              type="button"
+              data-lang-en
+            >
+              EN
+            </button>
+            <button class="lang-toggle-btn" type="button" data-lang-pt>PT</button>
           </div>
         </div>
       </header>
 
-      <!-- Status row: ONLY "Last updated" chip, aligned left -->
-      <div class="status-row">
-        <div class="status-chip">
-          <span id="updated-label" class="status-label">Last updated</span>
-          <span id="updated-value" class="status-value">—</span>
-        </div>
-      </div>
-
-      <section class="section">
-        <div id="section-upcoming" class="section-title">Upcoming</div>
-
-        <div class="grid">
-          <div class="panel">
-            <div class="panel-head">
-              <div id="next-deadlines" class="panel-title">Next deadlines</div>
-              <div id="deadlines-count" class="panel-count">0/10</div>
-            </div>
-            <div id="deadlines-container" class="panel-body"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <div id="next-congresses" class="panel-title">Upcoming congresses</div>
-              <div id="congresses-count" class="panel-count">0/10</div>
-            </div>
-            <div id="congresses-container" class="panel-body"></div>
-          </div>
-        </div>
+      <!-- Toolbar row (Last updated) -->
+      <section class="toolbar">
+        <button class="chip chip--muted" type="button">
+          <span class="chip-label">LAST UPDATED</span>
+          <span class="chip-value" data-last-updated>—</span>
+        </button>
       </section>
 
+      <!-- Main content -->
+      <main class="main">
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title" data-section-upcoming-title>
+              Upcoming
+            </h2>
+          </div>
+
+          <div class="section-grid">
+            <!-- Next deadlines -->
+            <section class="panel">
+              <div class="panel-header">
+                <h3 class="panel-title" data-next-deadlines-title>
+                  Next deadlines
+                </h3>
+                <span class="panel-count" data-next-deadlines-count>0/10</span>
+              </div>
+              <div class="panel-body" data-next-deadlines></div>
+            </section>
+
+            <!-- Upcoming congresses -->
+            <section class="panel">
+              <div class="panel-header">
+                <h3 class="panel-title" data-upcoming-congresses-title>
+                  Upcoming congresses
+                </h3>
+                <span
+                  class="panel-count"
+                  data-upcoming-congresses-count
+                  >0/10</span
+                >
+              </div>
+              <div class="panel-body" data-upcoming-congresses></div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
       <footer class="footer">
-        <div id="footer-text">
+        <p class="footer-text">
           Built as a static GitHub Pages site. Data refreshes via GitHub Actions.
-        </div>
+        </p>
       </footer>
     </div>
 
-    <script type="module" src="./assets/app.js"></script>
+    <!-- IMPORTANT: simple, non-module script include -->
+    <script src="app.js"></script>
   </body>
 </html>
-
