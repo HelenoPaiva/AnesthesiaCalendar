@@ -1,4 +1,4 @@
-// app.js — Anesthesia Congress Calendar (year-agnostic, safe)
+// app.js — Simple, year-agnostic, no per-series filtering
 
 // ----------------------
 // Basic helpers
@@ -122,7 +122,7 @@ var currentLocale = "en";
 function setLocale(locale) {
   currentLocale = locale;
   document.documentElement.setAttribute("data-locale", locale);
-  render(); // re-render using cached data
+  render();
 }
 
 // ----------------------
@@ -131,72 +131,6 @@ function setLocale(locale) {
 
 var rawEvents = [];
 var lastUpdatedAt = null;
-
-// ----------------------
-// Year-agnostic logic:
-// only one edition per series
-// ----------------------
-
-function computeActiveYearBySeries(events, today) {
-  var bySeries = {};
-
-  for (var i = 0; i < events.length; i++) {
-    var ev = events[i];
-    if (ev.type !== "congress" || !ev.start_date || !ev.end_date) continue;
-
-    var start = parseISODate(ev.start_date);
-    var end = parseISODate(ev.end_date);
-    if (!start || !end) continue;
-    if (end < today) continue; // congress already over
-
-    var series = ev.series || "UNKNOWN";
-    var yearNum = Number(ev.year);
-    if (!isFinite(yearNum)) continue;
-
-    if (!bySeries[series]) {
-      bySeries[series] = [];
-    }
-    bySeries[series].push({ year: yearNum, start: start, end: end });
-  }
-
-  var activeYearBySeries = {};
-  for (var seriesKey in bySeries) {
-    if (!bySeries.hasOwnProperty(seriesKey)) continue;
-    var list = bySeries[seriesKey];
-    list.sort(function (a, b) { return a.start - b.start; });
-    if (list.length > 0) {
-      activeYearBySeries[seriesKey] = list[0].year;
-    }
-  }
-
-  return activeYearBySeries;
-}
-
-function filterEventsToActiveEditions(events) {
-  var today = todayLocalMidnight();
-  var activeYearBySeries = computeActiveYearBySeries(events, today);
-
-  var filtered = [];
-  for (var i = 0; i < events.length; i++) {
-    var ev = events[i];
-    var series = ev.series || "UNKNOWN";
-    var activeYear = activeYearBySeries[series];
-    if (!isFinite(activeYear)) continue;
-    var evYear = Number(ev.year);
-    if (!isFinite(evYear)) continue;
-    if (evYear === activeYear) {
-      filtered.push(ev);
-    }
-  }
-
-  // Safety fallback: if filter removed everything, show all events.
-  if (!filtered || filtered.length === 0) {
-    console.warn("[calendar] Active-edition filter produced no events; falling back to all events.");
-    return events.slice();
-  }
-
-  return filtered;
-}
 
 // ----------------------
 // Rendering
@@ -229,23 +163,16 @@ function render() {
   congressesContainer.innerHTML = "";
 
   var today = todayLocalMidnight();
+  var events = rawEvents || [];
 
-  var events;
-  try {
-    events = filterEventsToActiveEditions(rawEvents || []);
-  } catch (err) {
-    console.error("Error while filtering events:", err);
-    events = (rawEvents || []).slice();
-  }
-
+  // All upcoming deadlines (no per-series filtering)
   var upcomingDeadlines = [];
   for (var i = 0; i < events.length; i++) {
     var ev = events[i];
-    if (ev.type && ev.type !== "congress" && ev.date) {
-      var d = parseISODate(ev.date);
-      if (d && d >= today) {
-        upcomingDeadlines.push({ ev: ev, d: d });
-      }
+    if (!ev || !ev.type || ev.type === "congress" || !ev.date) continue;
+    var d = parseISODate(ev.date);
+    if (d && d >= today) {
+      upcomingDeadlines.push({ ev: ev, d: d });
     }
   }
   upcomingDeadlines.sort(function (a, b) { return a.d - b.d; });
@@ -253,15 +180,15 @@ function render() {
     upcomingDeadlines = upcomingDeadlines.slice(0, 10);
   }
 
+  // All upcoming congresses (no per-series filtering)
   var upcomingCongresses = [];
   for (var j = 0; j < events.length; j++) {
     var ev2 = events[j];
-    if (ev2.type === "congress" && ev2.start_date && ev2.end_date) {
-      var start = parseISODate(ev2.start_date);
-      var end = parseISODate(ev2.end_date);
-      if (end && end >= today) {
-        upcomingCongresses.push({ ev: ev2, start: start, end: end });
-      }
+    if (!ev2 || ev2.type !== "congress" || !ev2.start_date || !ev2.end_date) continue;
+    var start = parseISODate(ev2.start_date);
+    var end = parseISODate(ev2.end_date);
+    if (end && end >= today) {
+      upcomingCongresses.push({ ev: ev2, start: start, end: end });
     }
   }
   upcomingCongresses.sort(function (a, b) { return a.start - b.start; });
@@ -269,6 +196,7 @@ function render() {
     upcomingCongresses = upcomingCongresses.slice(0, 10);
   }
 
+  // Deadlines
   if (upcomingDeadlines.length === 0) {
     var emptyD = document.createElement("div");
     emptyD.className = "empty-message";
@@ -281,6 +209,7 @@ function render() {
     }
   }
 
+  // Congresses
   if (upcomingCongresses.length === 0) {
     var emptyC = document.createElement("div");
     emptyC.className = "empty-message";
@@ -295,6 +224,7 @@ function render() {
     }
   }
 
+  // Counters
   var deadlinesCountEl = document.querySelector("[data-next-deadlines-count]");
   if (deadlinesCountEl) {
     deadlinesCountEl.textContent =
