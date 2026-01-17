@@ -1,446 +1,463 @@
-// assets/app.js
-import { downloadICSForEvent } from "./ics.js";
+// app.js — Anesthesia Congress Calendar (year-agnostic UI)
 
-const DATA_URL = "./data/events.json";
-const I18N_URL = "./data/i18n.json";
+// ----------------------
+// Basic helpers
+// ----------------------
 
-const LANG_KEY = "acc_lang";
-const DEFAULT_LANG = "en";
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttr(s) {
-  return escapeHtml(s).replaceAll("`", "&#096;");
-}
-
-function getLang() {
-  const saved = localStorage.getItem(LANG_KEY);
-  return saved === "pt" ? "pt" : DEFAULT_LANG;
-}
-
-function setLang(lang) {
-  localStorage.setItem(LANG_KEY, lang);
-  setActiveLangButton(lang);
-}
-
-function setActiveLangButton(lang) {
-  const en = $("lang-en");
-  const pt = $("lang-pt");
-  if (!en || !pt) return;
-
-  const activeStyle = {
-    background: "rgba(148, 163, 184, 0.14)",
-    color: "rgba(226, 232, 240, 0.95)",
-  };
-  const inactiveStyle = {
-    background: "transparent",
-    color: "rgba(148, 163, 184, 0.85)",
-  };
-
-  const apply = (el, isActive) => {
-    el.style.background = isActive ? activeStyle.background : inactiveStyle.background;
-    el.style.color = isActive ? activeStyle.color : inactiveStyle.color;
-  };
-
-  apply(en, lang === "en");
-  apply(pt, lang === "pt");
-}
-
-async function fetchJSON(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-  return res.json();
-}
-
-function localeFor(lang) {
-  return lang === "pt" ? "pt-BR" : "en";
-}
-
-function ymdTodayLocal() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-// Date-only parsing in local time (avoid Date("YYYY-MM-DD") UTC pitfalls)
-function parseYMDLocal(ymd) {
-  const [y, m, d] = String(ymd).split("-").map((x) => parseInt(x, 10));
+function parseISODate(dateStr) {
+  // dateStr: "YYYY-MM-DD" → Date at local midnight
+  const [y, m, d] = dateStr.split("-").map((x) => parseInt(x, 10));
   if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d, 0, 0, 0, 0);
+  return new Date(y, m - 1, d);
 }
 
-function formatDateLocal(ymd, lang) {
-  const dt = parseYMDLocal(ymd);
-  if (!dt) return String(ymd || "—");
-  return new Intl.DateTimeFormat(localeFor(lang), {
-    year: "numeric",
+function todayLocalMidnight() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function formatDateRange(startStr, endStr, locale) {
+  const start = parseISODate(startStr);
+  const end = parseISODate(endStr);
+  if (!start || !end) return "";
+
+  const optsShort = { day: "numeric", month: "short", year: "numeric" };
+  const optsLong = { day: "numeric", month: "long", year: "numeric" };
+
+  // Same month & year → "10–12 May 2026"
+  if (
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
+  ) {
+    const monthYear = end.toLocaleDateString(locale, {
+      month: "long",
+      year: "numeric",
+    });
+    return `${start.getDate()}–${end.getDate()} ${monthYear}`;
+  }
+
+  // Different month/year → "28 Apr 2026 → 02 May 2026"
+  return `${start.toLocaleDateString(locale, optsShort)} → ${end.toLocaleDateString(
+    locale,
+    optsShort
+  )}`;
+}
+
+function formatSingleDate(dateStr, locale) {
+  const d = parseISODate(dateStr);
+  if (!d) return "";
+  return d.toLocaleDateString(locale, {
+    day: "numeric",
     month: "short",
-    day: "2-digit",
-  }).format(dt);
-}
-
-function daysUntil(ymd) {
-  const target = parseYMDLocal(ymd);
-  if (!target) return null;
-
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const ms = target.getTime() - today.getTime();
-  return Math.round(ms / 86400000);
-}
-
-function isOngoing(ev, todayYMD) {
-  return ev.type === "congress" && ev.start_date && ev.end_date && ev.start_date <= todayYMD && todayYMD <= ev.end_date;
-}
-
-function isPastEvent(ev, todayYMD) {
-  if (ev.type === "congress") return !!ev.end_date && ev.end_date < todayYMD;
-  return !!ev.date && ev.date < todayYMD;
-}
-
-function isFutureOrOngoing(ev, todayYMD) {
-  if (isOngoing(ev, todayYMD)) return true;
-  if (ev.type === "congress") return !!ev.start_date && ev.start_date > todayYMD;
-  return !!ev.date && ev.date > todayYMD;
-}
-
-function whenKey(ev) {
-  return ev.type === "congress" ? (ev.start_date || "9999-12-31") : (ev.date || "9999-12-31");
-}
-
-function sortByWhen(a, b) {
-  const ak = whenKey(a);
-  const bk = whenKey(b);
-  if (ak < bk) return -1;
-  if (ak > bk) return 1;
-  const ap = a.priority ?? 0;
-  const bp = b.priority ?? 0;
-  return bp - ap;
-}
-
-function t(i18n, path, lang, fallback) {
-  let cur = i18n;
-  for (const k of path) {
-    if (!cur || typeof cur !== "object") return fallback;
-    cur = cur[k];
-  }
-  if (cur && typeof cur === "object" && (lang in cur)) return cur[lang];
-  return fallback;
-}
-
-function applyUIStrings(i18n, lang) {
-  const subtitle = $("subtitle");
-  const updatedLabel = $("updated-label");
-  const sectionUpcoming = $("section-upcoming");
-  const nextDeadlines = $("next-deadlines");
-  const nextCongresses = $("next-congresses");
-  const footerText = $("footer-text");
-
-  if (subtitle) subtitle.textContent = t(i18n, ["ui", "subtitle"], lang, "Upcoming deadlines and congress dates — auto-updated.");
-  if (updatedLabel) updatedLabel.textContent = t(i18n, ["ui", "last_updated"], lang, "Last updated");
-  if (sectionUpcoming) sectionUpcoming.textContent = t(i18n, ["ui", "upcoming"], lang, "Upcoming");
-  if (nextDeadlines) nextDeadlines.textContent = t(i18n, ["ui", "next_deadlines"], lang, "Next deadlines");
-  if (nextCongresses) nextCongresses.textContent = t(i18n, ["ui", "upcoming_congresses"], lang, "Upcoming congresses");
-  if (footerText) footerText.textContent = t(i18n, ["ui", "footer"], lang, "Built as a static GitHub Pages site. Data refreshes via GitHub Actions.");
-}
-
-// human-readable "x hours ago" for last_updated
-function formatUpdatedAgo(iso, lang) {
-  if (!iso) return "—";
-  const dt = new Date(iso);
-  if (Number.isNaN(dt.getTime())) return iso;
-
-  const now = new Date();
-  let diffMs = now.getTime() - dt.getTime();
-  if (diffMs < 0) diffMs = 0;
-  const seconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  const isPt = lang === "pt";
-
-  if (seconds < 45) return isPt ? "agora mesmo" : "just now";
-  if (minutes < 60) {
-    const n = minutes;
-    if (isPt) return n === 1 ? "há 1 minuto" : `há ${n} minutos`;
-    return n === 1 ? "1 minute ago" : `${n} minutes ago`;
-  }
-  if (hours < 48) {
-    const n = hours;
-    if (isPt) return n === 1 ? "há 1 hora" : `há ${n} horas`;
-    return n === 1 ? "1 hour ago" : `${n} hours ago`;
-  }
-  const n = days;
-  if (isPt) return n === 1 ? "há 1 dia" : `há ${n} dias`;
-  return n === 1 ? "1 day ago" : `${n} days ago`;
-}
-
-function setTopStatus(data, lang) {
-  const updatedValue = $("updated-value");
-  if (!updatedValue) return;
-
-  const iso = data.generated_at || "";
-  updatedValue.textContent = iso ? formatUpdatedAgo(iso, lang) : "—";
-}
-
-// --- visual series differentiation ----------------------------------------
-
-function seriesClass(ev) {
-  const series = String(ev.series || "").toUpperCase();
-  switch (series) {
-    case "ASA":
-      return "acc-card-series-asa";
-    case "CBA":
-      return "acc-card-series-cba";
-    case "COPA":
-      return "acc-card-series-copa";
-    case "WCA":
-      return "acc-card-series-wca";
-    case "EUROANAESTHESIA":
-      return "acc-card-series-euro";
-    case "CLASA":
-      return "acc-card-series-clasa";
-    case "LASRA":
-      return "acc-card-series-lasra";
-    default:
-      return "acc-card-series-default";
-  }
-}
-
-function statusBadgeHTML(ev, i18n, lang) {
-  const status = ev.status || "active";
-  const label = t(i18n, ["status", status], lang, status);
-
-  let cls = "badge badge-active";
-  if (status === "ended") cls = "badge badge-ended";
-
-  return `<span class="${cls}">${escapeHtml(label)}</span>`;
-}
-
-function typeTitle(ev, i18n, lang) {
-  if (ev.title && typeof ev.title === "object" && ev.title[lang]) return ev.title[lang];
-
-  const series = (ev.series || "").trim();
-  const year = ev.year ? String(ev.year) : "";
-  const typeLabel = t(i18n, ["types", ev.type], lang, ev.type);
-
-  const left = [series, year].filter(Boolean).join(" ");
-  return left ? `${left} — ${typeLabel}` : typeLabel;
-}
-
-function whenLabel(ev, lang) {
-  if (ev.type === "congress") {
-    const s = formatDateLocal(ev.start_date, lang);
-    const e = formatDateLocal(ev.end_date, lang);
-    return `${s} → ${e}`;
-  }
-  return formatDateLocal(ev.date, lang);
-}
-
-function metaLineHTML(ev, i18n, lang, todayYMD) {
-  const when = whenLabel(ev, lang);
-  const loc = ev.location ? ` · ${escapeHtml(ev.location)}` : "";
-
-  let extra = "";
-
-  if (ev.type !== "congress" && ev.date && ev.date >= todayYMD) {
-    const d = daysUntil(ev.date);
-    if (typeof d === "number") {
-      const inText = t(i18n, ["ui", "in_days"], lang, "in {n} days").replace("{n}", String(d));
-      extra += ` · <span class="acc-muted">${escapeHtml(inText)}</span>`;
-    }
-  }
-
-  return `${escapeHtml(when)}${loc}${extra}`;
-}
-
-function actionsHTML(ev, i18n, lang, todayYMD) {
-  const remindText = t(i18n, ["ui", "remind_me"], lang, "Remind me");
-  const openText = t(i18n, ["ui", "open"], lang, "Open");
-
-  const enabled = isFutureOrOngoing(ev, todayYMD);
-  const disabledAttr = enabled ? "" : ' aria-disabled="true" disabled';
-
-  const remindBtn = `
-    <button class="chip" data-action="remind" data-id="${escapeAttr(ev.id)}"${disabledAttr}>
-      ${escapeHtml(remindText)}
-    </button>
-  `;
-
-  const openBtn = ev.link
-    ? `<a class="chip" data-action="open" href="${escapeAttr(ev.link)}" target="_blank" rel="noreferrer">${escapeHtml(openText)}</a>`
-    : "";
-
-  return `${remindBtn}${openBtn}`;
-}
-
-function cardHTML(ev, i18n, lang, todayYMD) {
-  const title = typeTitle(ev, i18n, lang);
-  const badge = statusBadgeHTML(ev, i18n, lang);
-  const meta = metaLineHTML(ev, i18n, lang, todayYMD);
-  const actions = actionsHTML(ev, i18n, lang, todayYMD);
-  const seriesCls = seriesClass(ev);
-
-  return `
-    <div class="acc-card ${seriesCls}">
-      <div class="acc-card-head">
-        <div class="min-w-0">
-          <div class="acc-card-title break-words">${escapeHtml(title)}</div>
-          <div class="acc-card-meta">${meta}</div>
-        </div>
-        <div class="shrink-0">${badge}</div>
-      </div>
-      <div class="acc-card-actions">${actions}</div>
-    </div>
-  `;
-}
-
-function renderEmpty(container, text) {
-  container.innerHTML = `
-    <div class="acc-card">
-      <div class="acc-card-title">${escapeHtml(text)}</div>
-    </div>
-  `;
-}
-
-function renderList(container, items, i18n, lang, todayYMD, emptyText) {
-  if (!items || items.length === 0) {
-    renderEmpty(container, emptyText);
-    return;
-  }
-  container.innerHTML = items.map((ev) => cardHTML(ev, i18n, lang, todayYMD)).join("");
-}
-
-function setTopStatusCounts(deadlinesCount, congressesCount, upcomingDeadlines, upcomingCongresses) {
-  if (deadlinesCount) deadlinesCount.textContent = `${upcomingDeadlines.length}/10`;
-  if (congressesCount) congressesCount.textContent = `${upcomingCongresses.length}/10`;
-}
-
-function renderAll(i18n, data, lang) {
-  const todayYMD = ymdTodayLocal();
-
-  applyUIStrings(i18n, lang);
-  setTopStatus(data, lang);
-
-  const deadlinesContainer = $("deadlines-container");
-  const congressesContainer = $("congresses-container");
-  const deadlinesCount = $("deadlines-count");
-  const congressesCount = $("congresses-count");
-
-  const all = Array.isArray(data.events) ? data.events.slice() : [];
-  all.sort(sortByWhen);
-  window.__ACC_EVENTS__ = all;
-
-  const upcomingDeadlines = all
-    .filter((ev) => ev.type !== "congress")
-    .filter((ev) => !isPastEvent(ev, todayYMD))
-    .slice(0, 10);
-
-  const upcomingCongresses = all
-    .filter((ev) => ev.type === "congress")
-    .filter((ev) => !isPastEvent(ev, todayYMD))
-    .slice(0, 10);
-
-  setTopStatusCounts(deadlinesCount, congressesCount, upcomingDeadlines, upcomingCongresses);
-
-  renderList(
-    deadlinesContainer,
-    upcomingDeadlines,
-    i18n,
-    lang,
-    todayYMD,
-    t(i18n, ["ui", "no_deadlines"], lang, "No upcoming deadlines found.")
-  );
-
-  renderList(
-    congressesContainer,
-    upcomingCongresses,
-    i18n,
-    lang,
-    todayYMD,
-    t(i18n, ["ui", "no_congresses"], lang, "No upcoming congresses found.")
-  );
-}
-
-function bindGlobalHandlers(i18nRef) {
-  document.body.addEventListener("click", (e) => {
-    const target = e.target;
-    if (!target) return;
-
-    const btn = target.closest?.("[data-action='remind']");
-    if (!btn) return;
-
-    if (btn.hasAttribute("disabled") || btn.getAttribute("aria-disabled") === "true") return;
-
-    const id = btn.getAttribute("data-id");
-    if (!id) return;
-
-    const events = window.__ACC_EVENTS__ || [];
-    const ev = events.find((x) => x.id === id);
-    if (!ev) return;
-
-    const lang = getLang();
-    downloadICSForEvent(ev, i18nRef.current, lang);
+    year: "numeric",
   });
 }
 
-async function main() {
-  const [i18n, data] = await Promise.all([fetchJSON(I18N_URL), fetchJSON(DATA_URL)]);
+function humanizeLastUpdated(iso, locale) {
+  if (!iso) return "";
+  const updated = new Date(iso);
+  if (isNaN(updated.getTime())) return "";
 
-  const i18nRef = { current: i18n };
+  const now = new Date();
+  const diffMs = now - updated;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  let lang = getLang();
-  setActiveLangButton(lang);
+  const en = {
+    justNow: "just now",
+    minutes: (n) => `${n} minute${n !== 1 ? "s" : ""} ago`,
+    hours: (n) => `${n} hour${n !== 1 ? "s" : ""} ago`,
+    days: (n) => `${n} day${n !== 1 ? "s" : ""} ago`,
+  };
+  const pt = {
+    justNow: "agora mesmo",
+    minutes: (n) => `há ${n} minuto${n !== 1 ? "s" : ""}`,
+    hours: (n) => `há ${n} hora${n !== 1 ? "s" : ""}`,
+    days: (n) => `há ${n} dia${n !== 1 ? "s" : ""}`,
+  };
 
-  const enBtn = $("lang-en");
-  const ptBtn = $("lang-pt");
-  if (enBtn) {
-    enBtn.addEventListener("click", () => {
-      lang = "en";
-      setLang(lang);
-      renderAll(i18nRef.current, data, lang);
-    });
-  }
-  if (ptBtn) {
-    ptBtn.addEventListener("click", () => {
-      lang = "pt";
-      setLang(lang);
-      renderAll(i18nRef.current, data, lang);
-    });
-  }
+  const t = locale === "pt" ? pt : en;
 
-  bindGlobalHandlers(i18nRef);
-  renderAll(i18nRef.current, data, lang);
+  if (diffMin < 1) return t.justNow;
+  if (diffHours < 1) return t.minutes(diffMin);
+  if (diffDays < 1) return t.hours(diffHours);
+  return t.days(diffDays);
 }
 
-main().catch((err) => {
-  console.error(err);
+// ----------------------
+// i18n
+// ----------------------
 
-  const container = $("deadlines-container") || document.body;
-  const msg = err?.message ? String(err.message) : String(err);
+const I18N = {
+  en: {
+    lastUpdated: "Last updated",
+    upcoming: "Upcoming",
+    nextDeadlines: "Next deadlines",
+    upcomingCongresses: "Upcoming congresses",
+    noDeadlines: "No upcoming deadlines found.",
+    noCongresses: "No upcoming congresses found.",
+    remindMe: "Remind me",
+    open: "Open",
+    statusActive: "Active",
+  },
+  pt: {
+    lastUpdated: "Atualizado",
+    upcoming: "Próximos",
+    nextDeadlines: "Próximos prazos",
+    upcomingCongresses: "Próximos congressos",
+    noDeadlines: "Nenhum prazo futuro encontrado.",
+    noCongresses: "Nenhum congresso futuro encontrado.",
+    remindMe: "Lembrar",
+    open: "Abrir",
+    statusActive: "Ativo",
+  },
+};
 
-  if (container) {
-    container.innerHTML = `
-      <div class="acc-card" style="border-color: rgba(248, 113, 113, 0.55);">
-        <div class="acc-card-title" style="color: rgba(248, 113, 113, 0.95);">Failed to load data.</div>
-        <div class="acc-card-meta mono" style="color: rgba(226, 232, 240, 0.85); margin-top: 6px;">
-          ${escapeHtml(msg)}
-        </div>
-      </div>
-    `;
+let currentLocale = "en";
+
+function setLocale(locale) {
+  currentLocale = locale;
+  document.documentElement.setAttribute("data-locale", locale);
+  render(); // re-render using cached data
+}
+
+// ----------------------
+// Data state
+// ----------------------
+
+let rawEvents = [];
+let lastUpdatedAt = null;
+
+// ----------------------
+// Year-agnostic logic:
+// only one edition per series
+// ----------------------
+
+function computeActiveYearBySeries(events, today) {
+  // For each series (ASA, WCA, EUROANAESTHESIA, etc.) pick the
+  // first congress whose end_date is in the future.
+  const bySeries = {};
+
+  for (const ev of events) {
+    if (ev.type !== "congress" || !ev.start_date || !ev.end_date) continue;
+    const start = parseISODate(ev.start_date);
+    const end = parseISODate(ev.end_date);
+    if (!start || !end) continue;
+    if (end < today) continue; // congress already over
+
+    const series = ev.series || "UNKNOWN";
+    if (!bySeries[series]) {
+      bySeries[series] = [];
+    }
+    bySeries[series].push({
+      year: ev.year,
+      start,
+      end,
+    });
   }
+
+  const activeYearBySeries = {};
+  for (const [series, list] of Object.entries(bySeries)) {
+    list.sort((a, b) => a.start - b.start);
+    if (list.length > 0) {
+      activeYearBySeries[series] = list[0].year;
+    }
+  }
+
+  return activeYearBySeries;
+}
+
+function filterEventsToActiveEditions(events) {
+  const today = todayLocalMidnight();
+
+  const activeYearBySeries = computeActiveYearBySeries(events, today);
+
+  // If a series has no upcoming congress (no congress with end_date >= today),
+  // we hide that series entirely for now.
+  return events.filter((ev) => {
+    const series = ev.series || "UNKNOWN";
+    const activeYear = activeYearBySeries[series];
+    if (!activeYear) return false;
+    return ev.year === activeYear;
+  });
+}
+
+// ----------------------
+// Rendering
+// ----------------------
+
+function render() {
+  const t = I18N[currentLocale];
+
+  const lastUpdatedEl = document.querySelector("[data-last-updated]");
+  if (lastUpdatedEl) {
+    lastUpdatedEl.textContent = lastUpdatedAt
+      ? humanizeLastUpdated(lastUpdatedAt, currentLocale)
+      : "—";
+  }
+
+  const mainTitleEl = document.querySelector("[data-section-upcoming-title]");
+  if (mainTitleEl) {
+    mainTitleEl.textContent = t.upcoming;
+  }
+
+  const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
+  if (deadlinesTitleEl) {
+    deadlinesTitleEl.textContent = t.nextDeadlines;
+  }
+
+  const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
+  if (congressesTitleEl) {
+    congressesTitleEl.textContent = t.upcomingCongresses;
+  }
+
+  const deadlinesContainer = document.querySelector("[data-next-deadlines]");
+  const congressesContainer = document.querySelector("[data-upcoming-congresses]");
+
+  if (!deadlinesContainer || !congressesContainer) return;
+
+  deadlinesContainer.innerHTML = "";
+  congressesContainer.innerHTML = "";
+
+  const today = todayLocalMidnight();
+
+  // Apply year-agnostic filter: only one edition per series
+  const events = filterEventsToActiveEditions(rawEvents);
+
+  const upcomingDeadlines = events
+    .filter((ev) => ev.date && ev.type && ev.type !== "congress")
+    .map((ev) => {
+      const d = parseISODate(ev.date);
+      return { ev, d };
+    })
+    .filter(({ d }) => d && d >= today)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 10);
+
+  const upcomingCongresses = events
+    .filter((ev) => ev.type === "congress" && ev.start_date && ev.end_date)
+    .map((ev) => {
+      const start = parseISODate(ev.start_date);
+      const end = parseISODate(ev.end_date);
+      return { ev, start, end };
+    })
+    .filter(({ end }) => end && end >= today)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 10);
+
+  if (upcomingDeadlines.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-message";
+    empty.textContent = t.noDeadlines;
+    deadlinesContainer.appendChild(empty);
+  } else {
+    for (const { ev, d } of upcomingDeadlines) {
+      deadlinesContainer.appendChild(renderDeadlineCard(ev, d, t));
+    }
+  }
+
+  if (upcomingCongresses.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-message";
+    empty.textContent = t.noCongresses;
+    congressesContainer.appendChild(empty);
+  } else {
+    for (const { ev, start, end } of upcomingCongresses) {
+      congressesContainer.appendChild(renderCongressCard(ev, start, end, t));
+    }
+  }
+
+  // Update counters
+  const deadlinesCountEl = document.querySelector("[data-next-deadlines-count]");
+  if (deadlinesCountEl) {
+    deadlinesCountEl.textContent = `${Math.min(upcomingDeadlines.length, 10)}/10`;
+  }
+  const congressesCountEl = document.querySelector("[data-upcoming-congresses-count]");
+  if (congressesCountEl) {
+    congressesCountEl.textContent = `${Math.min(upcomingCongresses.length, 10)}/10`;
+  }
+}
+
+function seriesClass(series) {
+  if (!series) return "";
+  const s = series.toLowerCase();
+  if (s === "asa") return "card--asa";
+  if (s === "wca") return "card--wca";
+  if (s === "euroanaesthesia") return "card--euro";
+  if (s === "copa") return "card--copa";
+  if (s === "cba") return "card--cba";
+  if (s === "clasa") return "card--clasa";
+  if (s === "lasra") return "card--lasra";
+  return "";
+}
+
+function renderDeadlineCard(ev, dateObj, t) {
+  const card = document.createElement("article");
+  card.className = `card ${seriesClass(ev.series)}`;
+
+  const header = document.createElement("div");
+  header.className = "card-header";
+
+  const titleEl = document.createElement("h3");
+  titleEl.className = "card-title";
+  titleEl.textContent = ev.title?.[currentLocale] || ev.title?.en || ev.id || "Deadline";
+
+  const status = document.createElement("span");
+  status.className = "chip chip--status";
+  status.textContent = t.statusActive;
+
+  header.appendChild(titleEl);
+  header.appendChild(status);
+
+  const body = document.createElement("div");
+  body.className = "card-body";
+
+  const line = document.createElement("p");
+  line.className = "card-meta";
+  line.textContent = `${formatSingleDate(ev.date, currentLocale)} — ${daysDiffLabel(dateObj, t)}`;
+  body.appendChild(line);
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+
+  const remindBtn = document.createElement("button");
+  remindBtn.className = "btn btn-secondary";
+  remindBtn.textContent = t.remindMe;
+  remindBtn.addEventListener("click", () => {
+    alert("Reminder not implemented yet. (Local-only, no email.)");
+  });
+
+  const openLink = document.createElement("a");
+  openLink.className = "btn btn-primary";
+  openLink.href = ev.link || "#";
+  openLink.target = "_blank";
+  openLink.rel = "noopener noreferrer";
+  openLink.textContent = t.open;
+
+  actions.appendChild(remindBtn);
+  actions.appendChild(openLink);
+
+  card.appendChild(header);
+  card.appendChild(body);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderCongressCard(ev, start, end, t) {
+  const card = document.createElement("article");
+  card.className = `card ${seriesClass(ev.series)}`;
+
+  const header = document.createElement("div");
+  header.className = "card-header";
+
+  const titleEl = document.createElement("h3");
+  titleEl.className = "card-title";
+  titleEl.textContent = ev.title?.[currentLocale] || ev.title?.en || ev.id || "Congress";
+
+  const status = document.createElement("span");
+  status.className = "chip chip--status";
+  status.textContent = t.statusActive;
+
+  header.appendChild(titleEl);
+  header.appendChild(status);
+
+  const body = document.createElement("div");
+  body.className = "card-body";
+
+  const range = document.createElement("p");
+  range.className = "card-meta";
+  range.textContent = `${formatDateRange(ev.start_date, ev.end_date, currentLocale)} · ${ev.location || ""}`;
+  body.appendChild(range);
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+
+  const remindBtn = document.createElement("button");
+  remindBtn.className = "btn btn-secondary";
+  remindBtn.textContent = t.remindMe;
+  remindBtn.addEventListener("click", () => {
+    alert("Reminder not implemented yet. (Local-only, no email.)");
+  });
+
+  const openLink = document.createElement("a");
+  openLink.className = "btn btn-primary";
+  openLink.href = ev.link || "#";
+  openLink.target = "_blank";
+  openLink.rel = "noopener noreferrer";
+  openLink.textContent = t.open;
+
+  actions.appendChild(remindBtn);
+  actions.appendChild(openLink);
+
+  card.appendChild(header);
+  card.appendChild(body);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function daysDiffLabel(dateObj, t) {
+  const today = todayLocalMidnight();
+  const diffMs = dateObj - today;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    const n = Math.abs(diffDays);
+    return currentLocale === "pt"
+      ? `há ${n} dia${n !== 1 ? "s" : ""}`
+      : `${n} day${n !== 1 ? "s" : ""} ago`;
+  }
+  if (diffDays === 0) {
+    return currentLocale === "pt" ? "hoje" : "today";
+  }
+  return currentLocale === "pt"
+    ? `em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`
+    : `in ${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+}
+
+// ----------------------
+// Data loading
+// ----------------------
+
+async function loadData() {
+  try {
+    const res = await fetch("data/events.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    rawEvents = data.events || data || [];
+    lastUpdatedAt = data.updated_at || null;
+
+    render();
+  } catch (err) {
+    console.error("Failed to load events:", err);
+  }
+}
+
+// ----------------------
+// Language toggle wiring
+// ----------------------
+
+function initLocaleToggle() {
+  const enBtn = document.querySelector("[data-lang-en]");
+  const ptBtn = document.querySelector("[data-lang-pt]");
+
+  if (enBtn) {
+    enBtn.addEventListener("click", () => setLocale("en"));
+  }
+  if (ptBtn) {
+    ptBtn.addEventListener("click", () => setLocale("pt"));
+  }
+}
+
+// ----------------------
+// Boot
+// ----------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+  initLocaleToggle();
+  loadData();
 });
