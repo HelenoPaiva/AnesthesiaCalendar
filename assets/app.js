@@ -1,12 +1,14 @@
-// app.js — Anesthesia Congress Calendar (year-agnostic UI)
+// app.js — Anesthesia Congress Calendar (year-agnostic UI, safe fallback)
 
 // ----------------------
 // Basic helpers
 // ----------------------
 
 function parseISODate(dateStr) {
-  // dateStr: "YYYY-MM-DD" → Date at local midnight
-  const [y, m, d] = dateStr.split("-").map((x) => parseInt(x, 10));
+  if (!dateStr || typeof dateStr !== "string") return null;
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts.map((x) => parseInt(x, 10));
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }
@@ -22,7 +24,6 @@ function formatDateRange(startStr, endStr, locale) {
   if (!start || !end) return "";
 
   const optsShort = { day: "numeric", month: "short", year: "numeric" };
-  const optsLong = { day: "numeric", month: "long", year: "numeric" };
 
   // Same month & year → "10–12 May 2026"
   if (
@@ -148,11 +149,14 @@ function computeActiveYearBySeries(events, today) {
     if (end < today) continue; // congress already over
 
     const series = ev.series || "UNKNOWN";
+    const yearNum = Number(ev.year);
+    if (!Number.isFinite(yearNum)) continue;
+
     if (!bySeries[series]) {
       bySeries[series] = [];
     }
     bySeries[series].push({
-      year: ev.year,
+      year: yearNum,
       start,
       end,
     });
@@ -176,12 +180,25 @@ function filterEventsToActiveEditions(events) {
 
   // If a series has no upcoming congress (no congress with end_date >= today),
   // we hide that series entirely for now.
-  return events.filter((ev) => {
+  const filtered = events.filter((ev) => {
     const series = ev.series || "UNKNOWN";
     const activeYear = activeYearBySeries[series];
-    if (!activeYear) return false;
-    return ev.year === activeYear;
+    if (!Number.isFinite(activeYear)) return false;
+    const evYear = Number(ev.year);
+    return Number.isFinite(evYear) && evYear === activeYear;
   });
+
+  // Safety: if we accidentally filtered everything out (e.g., because
+  // of some data quirk), fall back to the original events list
+  // so the page never goes completely blank.
+  if (!filtered || filtered.length === 0) {
+    console.warn(
+      "[calendar] Active-edition filter produced no events; falling back to all events."
+    );
+    return events.slice();
+  }
+
+  return filtered;
 }
 
 // ----------------------
@@ -223,8 +240,13 @@ function render() {
 
   const today = todayLocalMidnight();
 
-  // Apply year-agnostic filter: only one edition per series
-  const events = filterEventsToActiveEditions(rawEvents);
+  let events;
+  try {
+    events = filterEventsToActiveEditions(rawEvents || []);
+  } catch (err) {
+    console.error("Error while filtering events:", err);
+    events = (rawEvents || []).slice();
+  }
 
   const upcomingDeadlines = events
     .filter((ev) => ev.date && ev.type && ev.type !== "congress")
@@ -269,7 +291,7 @@ function render() {
     }
   }
 
-  // Update counters
+  // Update counters if present
   const deadlinesCountEl = document.querySelector("[data-next-deadlines-count]");
   if (deadlinesCountEl) {
     deadlinesCountEl.textContent = `${Math.min(upcomingDeadlines.length, 10)}/10`;
@@ -282,7 +304,7 @@ function render() {
 
 function seriesClass(series) {
   if (!series) return "";
-  const s = series.toLowerCase();
+  const s = String(series).toLowerCase();
   if (s === "asa") return "card--asa";
   if (s === "wca") return "card--wca";
   if (s === "euroanaesthesia") return "card--euro";
@@ -316,7 +338,7 @@ function renderDeadlineCard(ev, dateObj, t) {
 
   const line = document.createElement("p");
   line.className = "card-meta";
-  line.textContent = `${formatSingleDate(ev.date, currentLocale)} — ${daysDiffLabel(dateObj, t)}`;
+  line.textContent = `${formatSingleDate(ev.date, currentLocale)} — ${daysDiffLabel(dateObj)}`;
   body.appendChild(line);
 
   const actions = document.createElement("div");
@@ -399,7 +421,7 @@ function renderCongressCard(ev, start, end, t) {
   return card;
 }
 
-function daysDiffLabel(dateObj, t) {
+function daysDiffLabel(dateObj) {
   const today = todayLocalMidnight();
   const diffMs = dateObj - today;
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
@@ -428,8 +450,13 @@ async function loadData() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    rawEvents = data.events || data || [];
-    lastUpdatedAt = data.updated_at || null;
+    if (Array.isArray(data)) {
+      rawEvents = data;
+      lastUpdatedAt = null;
+    } else {
+      rawEvents = data.events || [];
+      lastUpdatedAt = data.updated_at || null;
+    }
 
     render();
   } catch (err) {
