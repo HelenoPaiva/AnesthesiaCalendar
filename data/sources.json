@@ -4,14 +4,14 @@
       "series": "ASA",
       "priority": 10,
       "sources": [
-        {
-          "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
-          "trust": 100
-        },
-        {
-          "url": "https://www.asahq.org/annualmeeting/education/submissions",
-          "trust": 100
-        }
+          {
+            "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+            "trust": 100
+          },
+          {
+            "url": "https://www.asahq.org/annualmeeting/education/submissions",
+            "trust": 100
+          }
       ]
     },
 
@@ -31,7 +31,7 @@
       "series": "WCA",
       "priority": 9,
       "urls": [
-        "https://wcacongress.org/"
+        "https://wcacongress.org/programme/"
       ]
     },
 
