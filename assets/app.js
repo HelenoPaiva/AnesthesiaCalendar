@@ -1,4 +1,4 @@
-// app.js — Anesthesia Congress Calendar (year-agnostic UI, safe fallback)
+// app.js — Anesthesia Congress Calendar (year-agnostic, safe)
 
 // ----------------------
 // Basic helpers
@@ -6,80 +6,81 @@
 
 function parseISODate(dateStr) {
   if (!dateStr || typeof dateStr !== "string") return null;
-  const parts = dateStr.split("-");
+  var parts = dateStr.split("-");
   if (parts.length !== 3) return null;
-  const [y, m, d] = parts.map((x) => parseInt(x, 10));
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  var d = parseInt(parts[2], 10);
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }
 
 function todayLocalMidnight() {
-  const now = new Date();
+  var now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 function formatDateRange(startStr, endStr, locale) {
-  const start = parseISODate(startStr);
-  const end = parseISODate(endStr);
+  var start = parseISODate(startStr);
+  var end = parseISODate(endStr);
   if (!start || !end) return "";
 
-  const optsShort = { day: "numeric", month: "short", year: "numeric" };
+  var optsShort = { day: "numeric", month: "short", year: "numeric" };
 
-  // Same month & year → "10–12 May 2026"
   if (
     start.getFullYear() === end.getFullYear() &&
     start.getMonth() === end.getMonth()
   ) {
-    const monthYear = end.toLocaleDateString(locale, {
+    var monthYear = end.toLocaleDateString(locale, {
       month: "long",
-      year: "numeric",
+      year: "numeric"
     });
-    return `${start.getDate()}–${end.getDate()} ${monthYear}`;
+    return start.getDate() + "–" + end.getDate() + " " + monthYear;
   }
 
-  // Different month/year → "28 Apr 2026 → 02 May 2026"
-  return `${start.toLocaleDateString(locale, optsShort)} → ${end.toLocaleDateString(
-    locale,
-    optsShort
-  )}`;
+  return (
+    start.toLocaleDateString(locale, optsShort) +
+    " → " +
+    end.toLocaleDateString(locale, optsShort)
+  );
 }
 
 function formatSingleDate(dateStr, locale) {
-  const d = parseISODate(dateStr);
+  var d = parseISODate(dateStr);
   if (!d) return "";
   return d.toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
-    year: "numeric",
+    year: "numeric"
   });
 }
 
 function humanizeLastUpdated(iso, locale) {
   if (!iso) return "";
-  const updated = new Date(iso);
+  var updated = new Date(iso);
   if (isNaN(updated.getTime())) return "";
 
-  const now = new Date();
-  const diffMs = now - updated;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHours = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(diffHours / 24);
+  var now = new Date();
+  var diffMs = now - updated;
+  var diffSec = Math.floor(diffMs / 1000);
+  var diffMin = Math.floor(diffSec / 60);
+  var diffHours = Math.floor(diffMin / 60);
+  var diffDays = Math.floor(diffHours / 24);
 
-  const en = {
+  var en = {
     justNow: "just now",
-    minutes: (n) => `${n} minute${n !== 1 ? "s" : ""} ago`,
-    hours: (n) => `${n} hour${n !== 1 ? "s" : ""} ago`,
-    days: (n) => `${n} day${n !== 1 ? "s" : ""} ago`,
+    minutes: function (n) { return n + " minute" + (n !== 1 ? "s" : "") + " ago"; },
+    hours: function (n) { return n + " hour" + (n !== 1 ? "s" : "") + " ago"; },
+    days: function (n) { return n + " day" + (n !== 1 ? "s" : "") + " ago"; }
   };
-  const pt = {
+  var pt = {
     justNow: "agora mesmo",
-    minutes: (n) => `há ${n} minuto${n !== 1 ? "s" : ""}`,
-    hours: (n) => `há ${n} hora${n !== 1 ? "s" : ""}`,
-    days: (n) => `há ${n} dia${n !== 1 ? "s" : ""}`,
+    minutes: function (n) { return "há " + n + " minuto" + (n !== 1 ? "s" : ""); },
+    hours: function (n) { return "há " + n + " hora" + (n !== 1 ? "s" : ""); },
+    days: function (n) { return "há " + n + " dia" + (n !== 1 ? "s" : ""); }
   };
 
-  const t = locale === "pt" ? pt : en;
+  var t = locale === "pt" ? pt : en;
 
   if (diffMin < 1) return t.justNow;
   if (diffHours < 1) return t.minutes(diffMin);
@@ -91,7 +92,7 @@ function humanizeLastUpdated(iso, locale) {
 // i18n
 // ----------------------
 
-const I18N = {
+var I18N = {
   en: {
     lastUpdated: "Last updated",
     upcoming: "Upcoming",
@@ -101,7 +102,7 @@ const I18N = {
     noCongresses: "No upcoming congresses found.",
     remindMe: "Remind me",
     open: "Open",
-    statusActive: "Active",
+    statusActive: "Active"
   },
   pt: {
     lastUpdated: "Atualizado",
@@ -112,11 +113,11 @@ const I18N = {
     noCongresses: "Nenhum congresso futuro encontrado.",
     remindMe: "Lembrar",
     open: "Abrir",
-    statusActive: "Ativo",
-  },
+    statusActive: "Ativo"
+  }
 };
 
-let currentLocale = "en";
+var currentLocale = "en";
 
 function setLocale(locale) {
   currentLocale = locale;
@@ -128,8 +129,8 @@ function setLocale(locale) {
 // Data state
 // ----------------------
 
-let rawEvents = [];
-let lastUpdatedAt = null;
+var rawEvents = [];
+var lastUpdatedAt = null;
 
 // ----------------------
 // Year-agnostic logic:
@@ -137,36 +138,34 @@ let lastUpdatedAt = null;
 // ----------------------
 
 function computeActiveYearBySeries(events, today) {
-  // For each series (ASA, WCA, EUROANAESTHESIA, etc.) pick the
-  // first congress whose end_date is in the future.
-  const bySeries = {};
+  var bySeries = {};
 
-  for (const ev of events) {
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
     if (ev.type !== "congress" || !ev.start_date || !ev.end_date) continue;
-    const start = parseISODate(ev.start_date);
-    const end = parseISODate(ev.end_date);
+
+    var start = parseISODate(ev.start_date);
+    var end = parseISODate(ev.end_date);
     if (!start || !end) continue;
     if (end < today) continue; // congress already over
 
-    const series = ev.series || "UNKNOWN";
-    const yearNum = Number(ev.year);
-    if (!Number.isFinite(yearNum)) continue;
+    var series = ev.series || "UNKNOWN";
+    var yearNum = Number(ev.year);
+    if (!isFinite(yearNum)) continue;
 
     if (!bySeries[series]) {
       bySeries[series] = [];
     }
-    bySeries[series].push({
-      year: yearNum,
-      start,
-      end,
-    });
+    bySeries[series].push({ year: yearNum, start: start, end: end });
   }
 
-  const activeYearBySeries = {};
-  for (const [series, list] of Object.entries(bySeries)) {
-    list.sort((a, b) => a.start - b.start);
+  var activeYearBySeries = {};
+  for (var seriesKey in bySeries) {
+    if (!bySeries.hasOwnProperty(seriesKey)) continue;
+    var list = bySeries[seriesKey];
+    list.sort(function (a, b) { return a.start - b.start; });
     if (list.length > 0) {
-      activeYearBySeries[series] = list[0].year;
+      activeYearBySeries[seriesKey] = list[0].year;
     }
   }
 
@@ -174,27 +173,25 @@ function computeActiveYearBySeries(events, today) {
 }
 
 function filterEventsToActiveEditions(events) {
-  const today = todayLocalMidnight();
+  var today = todayLocalMidnight();
+  var activeYearBySeries = computeActiveYearBySeries(events, today);
 
-  const activeYearBySeries = computeActiveYearBySeries(events, today);
+  var filtered = [];
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    var series = ev.series || "UNKNOWN";
+    var activeYear = activeYearBySeries[series];
+    if (!isFinite(activeYear)) continue;
+    var evYear = Number(ev.year);
+    if (!isFinite(evYear)) continue;
+    if (evYear === activeYear) {
+      filtered.push(ev);
+    }
+  }
 
-  // If a series has no upcoming congress (no congress with end_date >= today),
-  // we hide that series entirely for now.
-  const filtered = events.filter((ev) => {
-    const series = ev.series || "UNKNOWN";
-    const activeYear = activeYearBySeries[series];
-    if (!Number.isFinite(activeYear)) return false;
-    const evYear = Number(ev.year);
-    return Number.isFinite(evYear) && evYear === activeYear;
-  });
-
-  // Safety: if we accidentally filtered everything out (e.g., because
-  // of some data quirk), fall back to the original events list
-  // so the page never goes completely blank.
+  // Safety fallback: if filter removed everything, show all events.
   if (!filtered || filtered.length === 0) {
-    console.warn(
-      "[calendar] Active-edition filter produced no events; falling back to all events."
-    );
+    console.warn("[calendar] Active-edition filter produced no events; falling back to all events.");
     return events.slice();
   }
 
@@ -206,41 +203,34 @@ function filterEventsToActiveEditions(events) {
 // ----------------------
 
 function render() {
-  const t = I18N[currentLocale];
+  var t = I18N[currentLocale];
 
-  const lastUpdatedEl = document.querySelector("[data-last-updated]");
+  var lastUpdatedEl = document.querySelector("[data-last-updated]");
   if (lastUpdatedEl) {
     lastUpdatedEl.textContent = lastUpdatedAt
       ? humanizeLastUpdated(lastUpdatedAt, currentLocale)
       : "—";
   }
 
-  const mainTitleEl = document.querySelector("[data-section-upcoming-title]");
-  if (mainTitleEl) {
-    mainTitleEl.textContent = t.upcoming;
-  }
+  var mainTitleEl = document.querySelector("[data-section-upcoming-title]");
+  if (mainTitleEl) mainTitleEl.textContent = t.upcoming;
 
-  const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
-  if (deadlinesTitleEl) {
-    deadlinesTitleEl.textContent = t.nextDeadlines;
-  }
+  var deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
+  if (deadlinesTitleEl) deadlinesTitleEl.textContent = t.nextDeadlines;
 
-  const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
-  if (congressesTitleEl) {
-    congressesTitleEl.textContent = t.upcomingCongresses;
-  }
+  var congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
+  if (congressesTitleEl) congressesTitleEl.textContent = t.upcomingCongresses;
 
-  const deadlinesContainer = document.querySelector("[data-next-deadlines]");
-  const congressesContainer = document.querySelector("[data-upcoming-congresses]");
-
+  var deadlinesContainer = document.querySelector("[data-next-deadlines]");
+  var congressesContainer = document.querySelector("[data-upcoming-congresses]");
   if (!deadlinesContainer || !congressesContainer) return;
 
   deadlinesContainer.innerHTML = "";
   congressesContainer.innerHTML = "";
 
-  const today = todayLocalMidnight();
+  var today = todayLocalMidnight();
 
-  let events;
+  var events;
   try {
     events = filterEventsToActiveEditions(rawEvents || []);
   } catch (err) {
@@ -248,63 +238,78 @@ function render() {
     events = (rawEvents || []).slice();
   }
 
-  const upcomingDeadlines = events
-    .filter((ev) => ev.date && ev.type && ev.type !== "congress")
-    .map((ev) => {
-      const d = parseISODate(ev.date);
-      return { ev, d };
-    })
-    .filter(({ d }) => d && d >= today)
-    .sort((a, b) => a.d - b.d)
-    .slice(0, 10);
+  var upcomingDeadlines = [];
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    if (ev.type && ev.type !== "congress" && ev.date) {
+      var d = parseISODate(ev.date);
+      if (d && d >= today) {
+        upcomingDeadlines.push({ ev: ev, d: d });
+      }
+    }
+  }
+  upcomingDeadlines.sort(function (a, b) { return a.d - b.d; });
+  if (upcomingDeadlines.length > 10) {
+    upcomingDeadlines = upcomingDeadlines.slice(0, 10);
+  }
 
-  const upcomingCongresses = events
-    .filter((ev) => ev.type === "congress" && ev.start_date && ev.end_date)
-    .map((ev) => {
-      const start = parseISODate(ev.start_date);
-      const end = parseISODate(ev.end_date);
-      return { ev, start, end };
-    })
-    .filter(({ end }) => end && end >= today)
-    .sort((a, b) => a.start - b.start)
-    .slice(0, 10);
+  var upcomingCongresses = [];
+  for (var j = 0; j < events.length; j++) {
+    var ev2 = events[j];
+    if (ev2.type === "congress" && ev2.start_date && ev2.end_date) {
+      var start = parseISODate(ev2.start_date);
+      var end = parseISODate(ev2.end_date);
+      if (end && end >= today) {
+        upcomingCongresses.push({ ev: ev2, start: start, end: end });
+      }
+    }
+  }
+  upcomingCongresses.sort(function (a, b) { return a.start - b.start; });
+  if (upcomingCongresses.length > 10) {
+    upcomingCongresses = upcomingCongresses.slice(0, 10);
+  }
 
   if (upcomingDeadlines.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-message";
-    empty.textContent = t.noDeadlines;
-    deadlinesContainer.appendChild(empty);
+    var emptyD = document.createElement("div");
+    emptyD.className = "empty-message";
+    emptyD.textContent = t.noDeadlines;
+    deadlinesContainer.appendChild(emptyD);
   } else {
-    for (const { ev, d } of upcomingDeadlines) {
-      deadlinesContainer.appendChild(renderDeadlineCard(ev, d, t));
+    for (var k = 0; k < upcomingDeadlines.length; k++) {
+      var pair = upcomingDeadlines[k];
+      deadlinesContainer.appendChild(renderDeadlineCard(pair.ev, pair.d, t));
     }
   }
 
   if (upcomingCongresses.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-message";
-    empty.textContent = t.noCongresses;
-    congressesContainer.appendChild(empty);
+    var emptyC = document.createElement("div");
+    emptyC.className = "empty-message";
+    emptyC.textContent = t.noCongresses;
+    congressesContainer.appendChild(emptyC);
   } else {
-    for (const { ev, start, end } of upcomingCongresses) {
-      congressesContainer.appendChild(renderCongressCard(ev, start, end, t));
+    for (var m = 0; m < upcomingCongresses.length; m++) {
+      var pairC = upcomingCongresses[m];
+      congressesContainer.appendChild(
+        renderCongressCard(pairC.ev, pairC.start, pairC.end, t)
+      );
     }
   }
 
-  // Update counters if present
-  const deadlinesCountEl = document.querySelector("[data-next-deadlines-count]");
+  var deadlinesCountEl = document.querySelector("[data-next-deadlines-count]");
   if (deadlinesCountEl) {
-    deadlinesCountEl.textContent = `${Math.min(upcomingDeadlines.length, 10)}/10`;
+    deadlinesCountEl.textContent =
+      Math.min(upcomingDeadlines.length, 10) + "/10";
   }
-  const congressesCountEl = document.querySelector("[data-upcoming-congresses-count]");
+  var congressesCountEl = document.querySelector("[data-upcoming-congresses-count]");
   if (congressesCountEl) {
-    congressesCountEl.textContent = `${Math.min(upcomingCongresses.length, 10)}/10`;
+    congressesCountEl.textContent =
+      Math.min(upcomingCongresses.length, 10) + "/10";
   }
 }
 
 function seriesClass(series) {
   if (!series) return "";
-  const s = String(series).toLowerCase();
+  var s = String(series).toLowerCase();
   if (s === "asa") return "card--asa";
   if (s === "wca") return "card--wca";
   if (s === "euroanaesthesia") return "card--euro";
@@ -316,42 +321,55 @@ function seriesClass(series) {
 }
 
 function renderDeadlineCard(ev, dateObj, t) {
-  const card = document.createElement("article");
-  card.className = `card ${seriesClass(ev.series)}`;
+  var card = document.createElement("article");
+  card.className = "card " + seriesClass(ev.series);
 
-  const header = document.createElement("div");
+  var header = document.createElement("div");
   header.className = "card-header";
 
-  const titleEl = document.createElement("h3");
+  var titleEl = document.createElement("h3");
   titleEl.className = "card-title";
-  titleEl.textContent = ev.title?.[currentLocale] || ev.title?.en || ev.id || "Deadline";
+  var title = null;
+  if (ev.title && ev.title[currentLocale]) {
+    title = ev.title[currentLocale];
+  } else if (ev.title && ev.title.en) {
+    title = ev.title.en;
+  } else if (ev.id) {
+    title = ev.id;
+  } else {
+    title = "Deadline";
+  }
+  titleEl.textContent = title;
 
-  const status = document.createElement("span");
+  var status = document.createElement("span");
   status.className = "chip chip--status";
   status.textContent = t.statusActive;
 
   header.appendChild(titleEl);
   header.appendChild(status);
 
-  const body = document.createElement("div");
+  var body = document.createElement("div");
   body.className = "card-body";
 
-  const line = document.createElement("p");
+  var line = document.createElement("p");
   line.className = "card-meta";
-  line.textContent = `${formatSingleDate(ev.date, currentLocale)} — ${daysDiffLabel(dateObj)}`;
+  line.textContent =
+    formatSingleDate(ev.date, currentLocale) +
+    " — " +
+    daysDiffLabel(dateObj);
   body.appendChild(line);
 
-  const actions = document.createElement("div");
+  var actions = document.createElement("div");
   actions.className = "card-actions";
 
-  const remindBtn = document.createElement("button");
+  var remindBtn = document.createElement("button");
   remindBtn.className = "btn btn-secondary";
   remindBtn.textContent = t.remindMe;
-  remindBtn.addEventListener("click", () => {
+  remindBtn.addEventListener("click", function () {
     alert("Reminder not implemented yet. (Local-only, no email.)");
   });
 
-  const openLink = document.createElement("a");
+  var openLink = document.createElement("a");
   openLink.className = "btn btn-primary";
   openLink.href = ev.link || "#";
   openLink.target = "_blank";
@@ -369,42 +387,55 @@ function renderDeadlineCard(ev, dateObj, t) {
 }
 
 function renderCongressCard(ev, start, end, t) {
-  const card = document.createElement("article");
-  card.className = `card ${seriesClass(ev.series)}`;
+  var card = document.createElement("article");
+  card.className = "card " + seriesClass(ev.series);
 
-  const header = document.createElement("div");
+  var header = document.createElement("div");
   header.className = "card-header";
 
-  const titleEl = document.createElement("h3");
+  var titleEl = document.createElement("h3");
   titleEl.className = "card-title";
-  titleEl.textContent = ev.title?.[currentLocale] || ev.title?.en || ev.id || "Congress";
+  var title = null;
+  if (ev.title && ev.title[currentLocale]) {
+    title = ev.title[currentLocale];
+  } else if (ev.title && ev.title.en) {
+    title = ev.title.en;
+  } else if (ev.id) {
+    title = ev.id;
+  } else {
+    title = "Congress";
+  }
+  titleEl.textContent = title;
 
-  const status = document.createElement("span");
+  var status = document.createElement("span");
   status.className = "chip chip--status";
   status.textContent = t.statusActive;
 
   header.appendChild(titleEl);
   header.appendChild(status);
 
-  const body = document.createElement("div");
+  var body = document.createElement("div");
   body.className = "card-body";
 
-  const range = document.createElement("p");
+  var range = document.createElement("p");
   range.className = "card-meta";
-  range.textContent = `${formatDateRange(ev.start_date, ev.end_date, currentLocale)} · ${ev.location || ""}`;
+  range.textContent =
+    formatDateRange(ev.start_date, ev.end_date, currentLocale) +
+    " · " +
+    (ev.location || "");
   body.appendChild(range);
 
-  const actions = document.createElement("div");
+  var actions = document.createElement("div");
   actions.className = "card-actions";
 
-  const remindBtn = document.createElement("button");
+  var remindBtn = document.createElement("button");
   remindBtn.className = "btn btn-secondary";
   remindBtn.textContent = t.remindMe;
-  remindBtn.addEventListener("click", () => {
+  remindBtn.addEventListener("click", function () {
     alert("Reminder not implemented yet. (Local-only, no email.)");
   });
 
-  const openLink = document.createElement("a");
+  var openLink = document.createElement("a");
   openLink.className = "btn btn-primary";
   openLink.href = ev.link || "#";
   openLink.target = "_blank";
@@ -422,46 +453,47 @@ function renderCongressCard(ev, start, end, t) {
 }
 
 function daysDiffLabel(dateObj) {
-  const today = todayLocalMidnight();
-  const diffMs = dateObj - today;
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  var today = todayLocalMidnight();
+  var diffMs = dateObj - today;
+  var diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    const n = Math.abs(diffDays);
+    var n = Math.abs(diffDays);
     return currentLocale === "pt"
-      ? `há ${n} dia${n !== 1 ? "s" : ""}`
-      : `${n} day${n !== 1 ? "s" : ""} ago`;
+      ? "há " + n + " dia" + (n !== 1 ? "s" : "")
+      : n + " day" + (n !== 1 ? "s" : "") + " ago";
   }
   if (diffDays === 0) {
     return currentLocale === "pt" ? "hoje" : "today";
   }
   return currentLocale === "pt"
-    ? `em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`
-    : `in ${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+    ? "em " + diffDays + " dia" + (diffDays !== 1 ? "s" : "")
+    : "in " + diffDays + " day" + (diffDays !== 1 ? "s" : "");
 }
 
 // ----------------------
 // Data loading
 // ----------------------
 
-async function loadData() {
-  try {
-    const res = await fetch("data/events.json", { cache: "no-cache" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    if (Array.isArray(data)) {
-      rawEvents = data;
-      lastUpdatedAt = null;
-    } else {
-      rawEvents = data.events || [];
-      lastUpdatedAt = data.updated_at || null;
-    }
-
-    render();
-  } catch (err) {
-    console.error("Failed to load events:", err);
-  }
+function loadData() {
+  fetch("data/events.json", { cache: "no-cache" })
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      if (Object.prototype.toString.call(data) === "[object Array]") {
+        rawEvents = data;
+        lastUpdatedAt = null;
+      } else {
+        rawEvents = data.events || [];
+        lastUpdatedAt = data.updated_at || null;
+      }
+      render();
+    })
+    .catch(function (err) {
+      console.error("Failed to load events:", err);
+    });
 }
 
 // ----------------------
@@ -469,14 +501,18 @@ async function loadData() {
 // ----------------------
 
 function initLocaleToggle() {
-  const enBtn = document.querySelector("[data-lang-en]");
-  const ptBtn = document.querySelector("[data-lang-pt]");
+  var enBtn = document.querySelector("[data-lang-en]");
+  var ptBtn = document.querySelector("[data-lang-pt]");
 
   if (enBtn) {
-    enBtn.addEventListener("click", () => setLocale("en"));
+    enBtn.addEventListener("click", function () {
+      setLocale("en");
+    });
   }
   if (ptBtn) {
-    ptBtn.addEventListener("click", () => setLocale("pt"));
+    ptBtn.addEventListener("click", function () {
+      setLocale("pt");
+    });
   }
 }
 
@@ -484,7 +520,7 @@ function initLocaleToggle() {
 // Boot
 // ----------------------
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
   initLocaleToggle();
   loadData();
 });
