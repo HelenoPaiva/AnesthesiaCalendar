@@ -1,4 +1,4 @@
-// app.js — Simple, year-agnostic, at most one congress per series
+// app.js — robust version: works with events.json OR ledger.json, always renders
 
 // ----------------------
 // Basic helpers
@@ -133,7 +133,7 @@ var rawEvents = [];
 var lastUpdatedAt = null;
 
 // ----------------------
-// Rendering
+// Main render
 // ----------------------
 
 function render() {
@@ -165,7 +165,7 @@ function render() {
   var today = todayLocalMidnight();
   var events = rawEvents || [];
 
-  // === Deadlines: all upcoming, no per-series filtering
+  // === Deadlines: all upcoming
   var upcomingDeadlines = [];
   for (var i = 0; i < events.length; i++) {
     var ev = events[i];
@@ -180,30 +180,20 @@ function render() {
     upcomingDeadlines = upcomingDeadlines.slice(0, 10);
   }
 
-  // === Congresses: all upcoming, BUT keep only first per series
-  var upcomingCongressesRaw = [];
+  // === Congresses: all upcoming (for now, no dedupe)
+  var upcomingCongresses = [];
   for (var j = 0; j < events.length; j++) {
     var ev2 = events[j];
     if (!ev2 || ev2.type !== "congress" || !ev2.start_date || !ev2.end_date) continue;
     var start = parseISODate(ev2.start_date);
     var end = parseISODate(ev2.end_date);
     if (end && end >= today) {
-      upcomingCongressesRaw.push({ ev: ev2, start: start, end: end });
+      upcomingCongresses.push({ ev: ev2, start: start, end: end });
     }
   }
-  // sort by start date so "earliest future edition" comes first
-  upcomingCongressesRaw.sort(function (a, b) { return a.start - b.start; });
-
-  // keep at most one congress per series (year-agnostic)
-  var seenSeries = {};
-  var upcomingCongresses = [];
-  for (var k = 0; k < upcomingCongressesRaw.length; k++) {
-    var item = upcomingCongressesRaw[k];
-    var seriesKey = (item.ev.series || "UNKNOWN").toString().toLowerCase();
-    if (seenSeries[seriesKey]) continue;
-    seenSeries[seriesKey] = true;
-    upcomingCongresses.push(item);
-    if (upcomingCongresses.length >= 10) break;
+  upcomingCongresses.sort(function (a, b) { return a.start - b.start; });
+  if (upcomingCongresses.length > 10) {
+    upcomingCongresses = upcomingCongresses.slice(0, 10);
   }
 
   // === Render deadlines
@@ -412,8 +402,35 @@ function daysDiffLabel(dateObj) {
 }
 
 // ----------------------
-// Data loading
+// Data loading (robust against different shapes)
 // ----------------------
+
+function extractEventsFromData(data) {
+  if (!data) return [];
+
+  // Case 1: already an array of events
+  if (Object.prototype.toString.call(data) === "[object Array]") {
+    return data;
+  }
+
+  // Case 2: { events: [...], updated_at: ... }
+  if (data.events && Object.prototype.toString.call(data.events) === "[object Array]") {
+    return data.events;
+  }
+
+  // Case 3: ledger-style { items: { key: { event: {...} } }, ... }
+  if (data.items && typeof data.items === "object") {
+    var out = [];
+    for (var key in data.items) {
+      if (!data.items.hasOwnProperty(key)) continue;
+      var item = data.items[key];
+      if (item && item.event) out.push(item.event);
+    }
+    return out;
+  }
+
+  return [];
+}
 
 function loadData() {
   fetch("data/events.json", { cache: "no-cache" })
@@ -422,17 +439,20 @@ function loadData() {
       return res.json();
     })
     .then(function (data) {
-      if (Object.prototype.toString.call(data) === "[object Array]") {
-        rawEvents = data;
-        lastUpdatedAt = null;
+      rawEvents = extractEventsFromData(data);
+      if (data && data.updated_at) {
+        lastUpdatedAt = data.updated_at;
       } else {
-        rawEvents = data.events || [];
-        lastUpdatedAt = data.updated_at || null;
+        lastUpdatedAt = null;
       }
       render();
     })
     .catch(function (err) {
       console.error("Failed to load events:", err);
+      // Still render something (empty state) so the UI isn't frozen
+      rawEvents = [];
+      lastUpdatedAt = null;
+      render();
     });
 }
 
@@ -462,5 +482,7 @@ function initLocaleToggle() {
 
 document.addEventListener("DOMContentLoaded", function () {
   initLocaleToggle();
+  // Render once with empty data so "No upcoming..." appears even if fetch dies
+  render();
   loadData();
 });
