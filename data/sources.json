@@ -30,7 +30,9 @@
     {
       "series": "WCA",
       "priority": 9,
-      "urls": []
+      "urls": [
+        "https://wcacongress.org/"
+      ]
     },
 
     {
