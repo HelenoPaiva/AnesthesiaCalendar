@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Anesthesia Congress Calendar</title>
+    <title>Anesthesia congress calendar</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Simple neutral styling so it works even without extra CSS -->
+    <!-- Simple neutral styling -->
     <style>
       :root {
         color-scheme: dark;
@@ -14,10 +14,12 @@
         --card-bg: #020617;
         --card-border: rgba(148, 163, 184, 0.3);
         --accent: #38bdf8;
-        --accent-soft: rgba(56, 189, 248, 0.2);
+        --accent-soft: rgba(56, 189, 248, 0.18);
+        --accent-strong: #0ea5e9;
         --text-main: #e5e7eb;
         --text-soft: #9ca3af;
         --chip-bg: rgba(15, 23, 42, 0.9);
+        --danger: #f97373;
       }
 
       * {
@@ -44,6 +46,13 @@
         margin-bottom: 24px;
       }
 
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
       h1 {
         font-size: 1.7rem;
         font-weight: 650;
@@ -55,6 +64,41 @@
         font-size: 0.95rem;
         color: var(--text-soft);
         max-width: 700px;
+      }
+
+      .lang-switch {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        gap: 2px;
+      }
+
+      .lang-btn {
+        border: none;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--text-soft);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .lang-btn--active {
+        background: var(--accent);
+        color: #020617;
+        font-weight: 600;
+      }
+
+      @media (max-width: 640px) {
+        .header-top {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
       }
 
       .chips-row {
@@ -135,7 +179,7 @@
       .event-card {
         background: radial-gradient(circle at top left, #0f172a, var(--card-bg));
         border-radius: 12px;
-        padding: 10px 11px;
+        padding: 10px 11px 8px;
         border: 1px solid var(--card-border);
         display: flex;
         flex-direction: column;
@@ -165,6 +209,8 @@
       .event-date-main {
         color: var(--accent);
         font-weight: 500;
+        border-color: var(--accent-soft);
+        background: var(--accent-soft);
       }
 
       .event-series {
@@ -172,8 +218,12 @@
       }
 
       .event-link {
-        margin-top: 4px;
+        margin-top: 2px;
         font-size: 0.78rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
       }
 
       .event-link a {
@@ -185,6 +235,20 @@
         text-decoration: underline;
       }
 
+      .event-ics-btn {
+        border: none;
+        background: none;
+        color: var(--text-soft);
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.78rem;
+      }
+
+      .event-ics-btn:hover {
+        color: var(--accent-strong);
+        text-decoration: underline;
+      }
+
       .empty-state {
         font-size: 0.85rem;
         color: var(--text-soft);
@@ -192,6 +256,11 @@
         border-radius: 10px;
         border: 1px dashed rgba(148, 163, 184, 0.5);
         background: rgba(15, 23, 42, 0.6);
+      }
+
+      .error-state {
+        border-color: rgba(248, 113, 113, 0.8);
+        color: var(--danger);
       }
 
       footer {
@@ -215,10 +284,17 @@
   <body>
     <div class="page">
       <header>
-        <h1>Anesthesia congress calendar</h1>
-        <p class="subtitle" data-subtitle>
-          <!-- Filled from i18n.ui.subtitle -->
-        </p>
+        <div class="header-top">
+          <div>
+            <h1>Anesthesia congress calendar</h1>
+            <p class="subtitle" data-subtitle></p>
+          </div>
+
+          <div class="lang-switch" data-lang-switch>
+            <button class="lang-btn" data-lang-btn="en">EN</button>
+            <button class="lang-btn" data-lang-btn="pt">PT</button>
+          </div>
+        </div>
 
         <div class="chips-row">
           <div class="chip">
