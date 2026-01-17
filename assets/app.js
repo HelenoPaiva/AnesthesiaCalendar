@@ -1,4 +1,4 @@
-// app.js — Simple, year-agnostic, no per-series filtering
+// app.js — Simple, year-agnostic, at most one congress per series
 
 // ----------------------
 // Basic helpers
@@ -165,7 +165,7 @@ function render() {
   var today = todayLocalMidnight();
   var events = rawEvents || [];
 
-  // All upcoming deadlines (no per-series filtering)
+  // === Deadlines: all upcoming, no per-series filtering
   var upcomingDeadlines = [];
   for (var i = 0; i < events.length; i++) {
     var ev = events[i];
@@ -180,44 +180,54 @@ function render() {
     upcomingDeadlines = upcomingDeadlines.slice(0, 10);
   }
 
-  // All upcoming congresses (no per-series filtering)
-  var upcomingCongresses = [];
+  // === Congresses: all upcoming, BUT keep only first per series
+  var upcomingCongressesRaw = [];
   for (var j = 0; j < events.length; j++) {
     var ev2 = events[j];
     if (!ev2 || ev2.type !== "congress" || !ev2.start_date || !ev2.end_date) continue;
     var start = parseISODate(ev2.start_date);
     var end = parseISODate(ev2.end_date);
     if (end && end >= today) {
-      upcomingCongresses.push({ ev: ev2, start: start, end: end });
+      upcomingCongressesRaw.push({ ev: ev2, start: start, end: end });
     }
   }
-  upcomingCongresses.sort(function (a, b) { return a.start - b.start; });
-  if (upcomingCongresses.length > 10) {
-    upcomingCongresses = upcomingCongresses.slice(0, 10);
+  // sort by start date so "earliest future edition" comes first
+  upcomingCongressesRaw.sort(function (a, b) { return a.start - b.start; });
+
+  // keep at most one congress per series (year-agnostic)
+  var seenSeries = {};
+  var upcomingCongresses = [];
+  for (var k = 0; k < upcomingCongressesRaw.length; k++) {
+    var item = upcomingCongressesRaw[k];
+    var seriesKey = (item.ev.series || "UNKNOWN").toString().toLowerCase();
+    if (seenSeries[seriesKey]) continue;
+    seenSeries[seriesKey] = true;
+    upcomingCongresses.push(item);
+    if (upcomingCongresses.length >= 10) break;
   }
 
-  // Deadlines
+  // === Render deadlines
   if (upcomingDeadlines.length === 0) {
     var emptyD = document.createElement("div");
     emptyD.className = "empty-message";
     emptyD.textContent = t.noDeadlines;
     deadlinesContainer.appendChild(emptyD);
   } else {
-    for (var k = 0; k < upcomingDeadlines.length; k++) {
-      var pair = upcomingDeadlines[k];
+    for (var dIdx = 0; dIdx < upcomingDeadlines.length; dIdx++) {
+      var pair = upcomingDeadlines[dIdx];
       deadlinesContainer.appendChild(renderDeadlineCard(pair.ev, pair.d, t));
     }
   }
 
-  // Congresses
+  // === Render congresses
   if (upcomingCongresses.length === 0) {
     var emptyC = document.createElement("div");
     emptyC.className = "empty-message";
     emptyC.textContent = t.noCongresses;
     congressesContainer.appendChild(emptyC);
   } else {
-    for (var m = 0; m < upcomingCongresses.length; m++) {
-      var pairC = upcomingCongresses[m];
+    for (var cIdx = 0; cIdx < upcomingCongresses.length; cIdx++) {
+      var pairC = upcomingCongresses[cIdx];
       congressesContainer.appendChild(
         renderCongressCard(pairC.ev, pairC.start, pairC.end, t)
       );
