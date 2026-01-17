@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
 
 
-# Month names in English
 MONTHS_EN = {
     "january": 1,
     "february": 2,
@@ -25,7 +24,6 @@ MONTHS_EN = {
 
 
 def _fetch(url: str) -> str:
-    """HTTP GET with a decent User-Agent, return decoded HTML."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (compatible; AnesthesiaCalendarBot/1.0; "
@@ -42,7 +40,7 @@ def _ymd(y: int, m: int, d: int) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
-def _parse_dd_mon_yyyy(date_str: str, warnings: List[str]) -> Tuple[int, int, int] | Tuple[None, None, None]:
+def _parse_dd_mon_yyyy(date_str: str, warnings: List[str]) -> Tuple[int | None, int | None, int | None]:
     """
     Parse '5 December 2025' into (year, month, day).
     Returns (None, None, None) on failure.
@@ -64,20 +62,31 @@ def _parse_dd_mon_yyyy(date_str: str, warnings: List[str]) -> Tuple[int, int, in
     return year, month, day
 
 
-def _extract_block(text: str, warnings: List[str]) -> str:
+def _find_date_near_keyword(text: str, keyword: str, warnings: List[str]) -> str | None:
     """
-    Extract the 'Important dates' block from the page text, if possible.
-    Fallback to the whole text if the boundaries are not found.
+    Find a 'dd Month YYYY' date near a given keyword.
+    Handles both 'Keyword ... 5 December 2025' and '5 December 2025 ... Keyword'.
     """
-    m = re.search(
-        r"Important dates(.*?)(Euroanaesthesia\s+\d{4}\s+will be held|Euroanaesthesia is recognised)",
-        text,
-        flags=re.IGNORECASE,
+    # Keyword first, date after
+    pattern1 = re.compile(
+        rf"{keyword}[^0-9]{{0,120}}(\d{{1,2}}\s+[A-Za-z]+\s+20\d{{2}})",
+        re.IGNORECASE,
     )
-    if not m:
-        warnings.append("[EUROANAESTHESIA] Could not isolate 'Important dates' block; using full page text.")
-        return text
-    return m.group(1)
+    m = pattern1.search(text)
+    if m:
+        return m.group(1)
+
+    # Date first, keyword after
+    pattern2 = re.compile(
+        rf"(\d{{1,2}}\s+[A-Za-z]+\s+20\d{{2}})[^0-9]{{0,120}}{keyword}",
+        re.IGNORECASE,
+    )
+    m = pattern2.search(text)
+    if m:
+        return m.group(1)
+
+    warnings.append(f"[EUROANAESTHESIA] Did not find date near keyword '{keyword}'.")
+    return None
 
 
 def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
@@ -89,7 +98,7 @@ def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], L
       - abstract_open
       - abstract_deadline
       - early_bird_deadline
-      - registration_deadline (late registration closes)
+      - registration_deadline
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
@@ -103,18 +112,20 @@ def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], L
     except Exception as e:  # pragma: no cover - network
         return [], [f"[EUROANAESTHESIA] Failed to fetch {base_url}: {e}"]
 
-    # Flatten whitespace to make regex easier
+    # Flatten whitespace for regex
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
-    block = _extract_block(text, warnings)
 
     events: List[Dict[str, Any]] = []
 
     # ----------------------------------------------------------------------
-    # 1) Congress dates: "Congress Dates 6-8 June 2026"
+    # 1) Congress dates
+    #
+    # Relaxed pattern: look for "Euroanaesthesia 2026" followed by
+    # something like "6-8 June 2026" within ~150 chars.
     # ----------------------------------------------------------------------
     m_cong = re.search(
-        r"Congress Dates\s+(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})",
-        block,
+        r"Euroanaesthesia\s*2026[^0-9]{0,150}?(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})",
+        text,
         flags=re.IGNORECASE,
     )
 
@@ -151,22 +162,20 @@ def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], L
                 }
             )
     else:
-        warnings.append("[EUROANAESTHESIA] Could not find congress date pattern 'Congress Dates 6-8 June 2026'.")
+        warnings.append(
+            "[EUROANAESTHESIA] Could not find congress date near 'Euroanaesthesia 2026'."
+        )
 
-    # If we didn't get a congress year, we still try to parse deadlines,
-    # but we fall back to using the date's own year as 'year'.
-    # (Better to show correct dates than nothing.)
-    def add_deadline(label: str, etype: str, title_en: str, title_pt: str) -> None:
+    # ----------------------------------------------------------------------
+    # 2) Deadline helper
+    # ----------------------------------------------------------------------
+    def add_deadline(keyword: str, etype: str, title_en: str, title_pt: str) -> None:
         nonlocal congress_year, events
 
-        # label is literal text that appears before the date, e.g. "Abstract submission closes"
-        pattern = rf"{label}\s+(\d{{1,2}}\s+[A-Za-z]+\s+20\d{{2}})"
-        m = re.search(pattern, block, flags=re.IGNORECASE)
-        if not m:
-            warnings.append(f"[EUROANAESTHESIA] Did not find date for label '{label}'.")
+        date_str = _find_date_near_keyword(text, keyword, warnings)
+        if not date_str:
             return
 
-        date_str = m.group(1)
         y, mnum, d = _parse_dd_mon_yyyy(date_str, warnings)
         if y is None or mnum is None or d is None:
             return
@@ -189,43 +198,43 @@ def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], L
         )
 
     # ----------------------------------------------------------------------
-    # 2) Key deadlines inside "Important dates"
-    #    Based exactly on the text from euroanaesthesia.org/2026/
+    # 3) Key deadlines (keywords are deliberately loose)
     # ----------------------------------------------------------------------
 
-    # Abstract submission opens (November 2025)
+    # Abstracts
     add_deadline(
-        label="Abstract submission opens",
+        keyword="abstract submission opens",
         etype="abstract_open",
         title_en="Euroanaesthesia 2026 — Abstract submission opens",
         title_pt="Euroanaesthesia 2026 — Abertura para submissão de resumos",
     )
 
-    # Abstract submission closes (December 2025)
     add_deadline(
-        label="Abstract submission closes",
+        keyword="abstract submission closes",
         etype="abstract_deadline",
         title_en="Euroanaesthesia 2026 — Abstract submission deadline",
         title_pt="Euroanaesthesia 2026 — Prazo final para submissão de resumos",
     )
 
-    # Early registration closes (February 2026)
+    # Early registration
     add_deadline(
-        label="Early registration closes (Physical congress)",
+        keyword="early registration closes",
         etype="early_bird_deadline",
         title_en="Euroanaesthesia 2026 — Early registration deadline",
         title_pt="Euroanaesthesia 2026 — Prazo para inscrição early-bird",
     )
 
-    # Late registration closes (June 2026)
+    # Late registration
     add_deadline(
-        label="Late registration closes (Physical congress)",
+        keyword="late registration closes",
         etype="registration_deadline",
         title_en="Euroanaesthesia 2026 — Late registration deadline",
         title_pt="Euroanaesthesia 2026 — Prazo para inscrição tardia",
     )
 
     if not events and not warnings:
-        warnings.append("[EUROANAESTHESIA] No events produced from Euroanaesthesia page (regex may need update).")
+        warnings.append(
+            "[EUROANAESTHESIA] No events produced from Euroanaesthesia page (regex likely needs update)."
+        )
 
     return events, warnings
