@@ -43,9 +43,14 @@ def _ymd(y: int, m: int, d: int) -> str:
 
 def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
-    Scrape WCA 2026 key dates from wcacongress.org.
+    Scrape WCA key dates from wcacongress.org (Programme page).
 
-    Produces:
+    This is year-agnostic:
+      - It reads the congress year from "dd-dd Month YYYY ... Congress".
+      - All deadlines are associated with that congress year.
+      - No year (e.g., 2026) is hard-coded here.
+
+    Produces for the *current* congress edition on the site:
       - congress (start_date, end_date)
       - abstract_deadline
       - early_bird_deadline
@@ -67,7 +72,8 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
 
     # ------------------------------------------------------------------
-    # Locate the "Key Dates" block, which looks like:
+    # Locate the "Key Dates" block.
+    # Example structure:
     #
     #   Key Dates
     #   30 September 2025 – Abstract Submission Deadline
@@ -77,7 +83,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     #   Subscribe to the WCA mailing list
     # ------------------------------------------------------------------
     m_block = re.search(
-        r"Key Dates(.*?)(Subscribe to the WCA mailing list|#WCA2026)",
+        r"Key Dates(.*?)(Subscribe to the WCA mailing list|#WCA20\d{2})",
         text,
         flags=re.IGNORECASE,
     )
@@ -89,10 +95,14 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     events: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------
-    # 1) Congress dates: "15-19 April 2026 – Congress"
+    # 1) Congress dates
+    #
+    # Generic pattern: "dd-dd Month YYYY [optional dash] Congress"
+    # We do NOT hard-code any specific year.
     # ------------------------------------------------------------------
     m_cong = re.search(
-        r"(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*Congress",
+        r"(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})"
+        r"(?:\s*[–\-]\s*)?\s*Congress",
         block,
         flags=re.IGNORECASE,
     )
@@ -120,27 +130,33 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                     "type": "congress",
                     "start_date": start_date,
                     "end_date": end_date,
-                    "location": "Marrakech, Morocco",
+                    "location": "Marrakech, Morocco",  # NOTE: if WCA moves city, this may need revisiting.
                     "link": base_url,
                     "priority": 9,
                     "title": {
-                        "en": "WCA 2026 — World Congress of Anaesthesiologists",
-                        "pt": "WCA 2026 — Congresso Mundial de Anestesiologia",
+                        "en": f"WCA {year} — World Congress of Anaesthesiologists",
+                        "pt": f"WCA {year} — Congresso Mundial de Anestesiologia",
                     },
                     "source": "scraped",
                 }
             )
     else:
-        warnings.append("[WCA] Could not find '15-19 April 2026 – Congress' in Key Dates block.")
+        warnings.append(
+            "[WCA] Could not find a 'dd-dd Month YYYY ... Congress' line in Key Dates block."
+        )
 
     # ------------------------------------------------------------------
     # 2) Individual deadlines: lines like
     #    '30 September 2025 – Abstract Submission Deadline'
     #
-    # We only match single-day entries, not the range we already used.
+    # We only match single-day entries, not the congress date range we
+    # already used.
     # ------------------------------------------------------------------
     line_pattern = re.compile(
-        r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*([^0-9]+?)(?=(\d{1,2}\s+[A-Za-z]+\s+20\d{2}\s*[–\-]|15-19\s+April\s+20\d{2}\s*[–\-]\s*Congress|$))",
+        r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*([^0-9]+?)(?=("
+        r"\d{1,2}\s+[A-Za-z]+\s+20\d{2}\s*[–\-]|"
+        r"\d{1,2}\s*[-–]\s*\d{1,2}\s+[A-Za-z]+\s+20\d{2}(?:\s*[–\-]\s*)?\s*Congress|$"
+        r"))",
         re.IGNORECASE,
     )
 
@@ -160,20 +176,21 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         if "abstract" in label_lower:
             etype = "abstract_deadline"
-            title_en = "WCA 2026 — Abstract submission deadline"
-            title_pt = "WCA 2026 — Prazo final de submissão de resumos"
+            title_en_tail = "Abstract submission deadline"
+            title_pt_tail = "Prazo final de submissão de resumos"
         elif "early bird" in label_lower:
             etype = "early_bird_deadline"
-            title_en = "WCA 2026 — Early-bird registration deadline"
-            title_pt = "WCA 2026 — Prazo de inscrição early-bird"
+            title_en_tail = "Early-bird registration deadline"
+            title_pt_tail = "Prazo de inscrição early-bird"
         elif "regular registration" in label_lower:
             etype = "registration_deadline"
-            title_en = "WCA 2026 — Regular registration deadline"
-            title_pt = "WCA 2026 — Prazo de inscrição regular"
+            title_en_tail = "Regular registration deadline"
+            title_pt_tail = "Prazo de inscrição regular"
         else:
             # Unknown label — skip rather than guessing.
             continue
 
+        # Associate deadlines with the congress year if we found it.
         year_for_event = congress_year or year
 
         events.append(
@@ -185,7 +202,10 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 "location": "Marrakech, Morocco",
                 "link": base_url,
                 "priority": 8,
-                "title": {"en": title_en, "pt": title_pt},
+                "title": {
+                    "en": f"WCA {year_for_event} — {title_en_tail}",
+                    "pt": f"WCA {year_for_event} — {title_pt_tail}",
+                },
                 "source": "scraped",
             }
         )
