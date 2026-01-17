@@ -1,100 +1,261 @@
-<!doctype html>
-<html lang="en" data-locale="en">
+<!DOCTYPE html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta charset="UTF-8" />
     <title>Anesthesia Congress Calendar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <meta
-      name="description"
-      content="Upcoming deadlines and congress dates in anesthesiology — auto-updated."
-    />
+    <!-- Simple neutral styling so it works even without extra CSS -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050816;
+        --bg-soft: #0b1120;
+        --card-bg: #020617;
+        --card-border: rgba(148, 163, 184, 0.3);
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.2);
+        --text-main: #e5e7eb;
+        --text-soft: #9ca3af;
+        --chip-bg: rgba(15, 23, 42, 0.9);
+      }
 
-    <link rel="stylesheet" href="styles.css" />
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #1d283a 0, #020617 60%, #000 100%);
+        color: var(--text-main);
+        min-height: 100vh;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        font-size: 1.7rem;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        margin-bottom: 6px;
+      }
+
+      .subtitle {
+        font-size: 0.95rem;
+        color: var(--text-soft);
+        max-width: 700px;
+      }
+
+      .chips-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .chip {
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--chip-bg);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: var(--text-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      main {
+        margin-top: 8px;
+      }
+
+      .columns {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      @media (max-width: 800px) {
+        .columns {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .col {
+        background: linear-gradient(135deg, var(--bg-soft), #020617);
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        padding: 16px 14px 16px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
+      }
+
+      .col-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .col-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .col-count {
+        font-size: 0.8rem;
+        color: var(--text-soft);
+      }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 6px;
+      }
+
+      .event-card {
+        background: radial-gradient(circle at top left, #0f172a, var(--card-bg));
+        border-radius: 12px;
+        padding: 10px 11px;
+        border: 1px solid var(--card-border);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .event-title {
+        font-size: 0.95rem;
+        font-weight: 550;
+      }
+
+      .event-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      .event-chip {
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.8);
+      }
+
+      .event-date-main {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .event-series {
+        opacity: 0.9;
+      }
+
+      .event-link {
+        margin-top: 4px;
+        font-size: 0.78rem;
+      }
+
+      .event-link a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .event-link a:hover {
+        text-decoration: underline;
+      }
+
+      .empty-state {
+        font-size: 0.85rem;
+        color: var(--text-soft);
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px dashed rgba(148, 163, 184, 0.5);
+        background: rgba(15, 23, 42, 0.6);
+      }
+
+      footer {
+        margin-top: 24px;
+        font-size: 0.75rem;
+        color: var(--text-soft);
+        text-align: right;
+        opacity: 0.75;
+      }
+
+      footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
     <div class="page">
-      <!-- Header -->
-      <header class="header">
-        <div class="header-left">
-          <h1 class="app-title">Anesthesia Congress Calendar</h1>
-          <p class="app-subtitle">
-            Upcoming deadlines and congress dates — auto-updated.
-          </p>
-        </div>
-        <div class="header-right">
-          <div class="lang-toggle">
-            <button
-              class="lang-toggle-btn lang-toggle-btn--active"
-              type="button"
-              data-lang-en
-            >
-              EN
-            </button>
-            <button class="lang-toggle-btn" type="button" data-lang-pt>PT</button>
+      <header>
+        <h1>Anesthesia congress calendar</h1>
+        <p class="subtitle" data-subtitle>
+          <!-- Filled from i18n.ui.subtitle -->
+        </p>
+
+        <div class="chips-row">
+          <div class="chip">
+            <span class="chip-dot"></span>
+            <span data-last-updated>…</span>
           </div>
         </div>
       </header>
 
-      <!-- Toolbar row (Last updated) -->
-      <section class="toolbar">
-        <button class="chip chip--muted" type="button">
-          <span class="chip-label">LAST UPDATED</span>
-          <span class="chip-value" data-last-updated>—</span>
-        </button>
-      </section>
-
-      <!-- Main content -->
-      <main class="main">
-        <section class="section">
-          <div class="section-header">
-            <h2 class="section-title" data-section-upcoming-title>
-              Upcoming
-            </h2>
+      <main>
+        <section class="columns">
+          <div class="col">
+            <div class="col-header">
+              <h2 class="col-title" data-next-deadlines-title>Next deadlines</h2>
+              <div class="col-count" data-next-deadlines-count></div>
+            </div>
+            <div class="list" data-next-deadlines></div>
           </div>
 
-          <div class="section-grid">
-            <!-- Next deadlines -->
-            <section class="panel">
-              <div class="panel-header">
-                <h3 class="panel-title" data-next-deadlines-title>
-                  Next deadlines
-                </h3>
-                <span class="panel-count" data-next-deadlines-count>0/10</span>
-              </div>
-              <div class="panel-body" data-next-deadlines></div>
-            </section>
-
-            <!-- Upcoming congresses -->
-            <section class="panel">
-              <div class="panel-header">
-                <h3 class="panel-title" data-upcoming-congresses-title>
-                  Upcoming congresses
-                </h3>
-                <span
-                  class="panel-count"
-                  data-upcoming-congresses-count
-                  >0/10</span
-                >
-              </div>
-              <div class="panel-body" data-upcoming-congresses></div>
-            </section>
+          <div class="col">
+            <div class="col-header">
+              <h2 class="col-title" data-upcoming-congresses-title>
+                Upcoming congresses
+              </h2>
+              <div class="col-count" data-upcoming-congresses-count></div>
+            </div>
+            <div class="list" data-upcoming-congresses></div>
           </div>
         </section>
       </main>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <p class="footer-text">
-          Built as a static GitHub Pages site. Data refreshes via GitHub Actions.
-        </p>
+      <footer>
+        <span>Static GitHub Pages — data from local JSON files.</span>
       </footer>
     </div>
 
-    <!-- IMPORTANT: simple, non-module script include -->
-    <script src="app.js"></script>
+    <!-- MAIN APP SCRIPT -->
+    <script src="assets/app.js" defer></script>
   </body>
 </html>
