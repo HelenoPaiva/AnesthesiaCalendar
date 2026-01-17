@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-16T20:43:16+00:00",
+  "generated_at": "2026-01-17T01:35:03+00:00",
   "events": [
     {
       "series": "ASA",
@@ -201,6 +201,22 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-da8bd39c7f"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-06-06",
+      "end_date": "2026-06-08",
+      "location": "Rotterdam, The Netherlands",
+      "link": "https://euroanaesthesia.org/2026/",
+      "priority": 8,
+      "title": {
+        "en": "Euroanaesthesia 2026 — ESAIC Annual Congress",
+        "pt": "Euroanaesthesia 2026 — Congresso anual da ESAIC"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2026-congress-b31acb0f7c"
     }
   ]
 }
