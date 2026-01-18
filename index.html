@@ -5,7 +5,6 @@
     <title>Anesthesia congress calendar</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Simple neutral styling -->
     <style>
       :root {
         color-scheme: dark;
@@ -269,6 +268,10 @@
         color: var(--text-soft);
         text-align: right;
         opacity: 0.75;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       footer a {
@@ -328,10 +331,11 @@
 
       <footer>
         <span>Static GitHub Pages — data from local JSON files.</span>
+        <span data-app-version>app: …</span>
       </footer>
     </div>
 
-    <!-- MAIN APP SCRIPT -->
-    <script src="assets/app.js" defer></script>
+    <!-- Cache-busting script URL is CRITICAL on mobile Safari/Brave -->
+    <script src="assets/app.js?v=20260117_congress_fix_2" defer></script>
   </body>
 </html>
