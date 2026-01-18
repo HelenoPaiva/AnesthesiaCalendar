@@ -1,4 +1,5 @@
 // assets/app.js — full calendar logic with i18n, lang switch and ICS export
+// Updated to support congresses that have start_date / end_date (no date field).
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -15,7 +16,7 @@ const DEADLINE_TYPES = [
   "deadline",
 ];
 
-// If the scraper uses specific types for main congress dates, add them here:
+// Main congress / meeting types
 const CONGRESS_TYPES = [
   "congress",
   "meeting",
@@ -40,6 +41,8 @@ async function fetchJson(url) {
   console.log("Loaded", url, "keys:", Object.keys(json || {}));
   return json;
 }
+
+// ---------- Language helpers ----------
 
 function getStoredLang() {
   try {
@@ -70,6 +73,8 @@ function ui(i18n, key, lang, fallback) {
   return entry[lang] || entry.en || fallback || key;
 }
 
+// ---------- Date helpers ----------
+
 function formatISODate(dateStr) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
@@ -79,6 +84,17 @@ function formatISODate(dateStr) {
   const mm = String(dt.getMonth() + 1).padStart(2, "0");
   const yyyy = dt.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
+}
+
+// Main date for an event (used for "upcoming", relative day label, ICS start)
+function getEventDateISO(ev) {
+  return ev.date || ev.start_date || null;
+}
+
+// End date for an event (for congress ranges)
+function getEventEndISO(ev) {
+  if (ev.end_date) return ev.end_date;
+  return ev.date || ev.start_date || null;
 }
 
 function formatTimeAgo(date, lang) {
@@ -137,12 +153,15 @@ function relativeDayLabel(i18n, lang, dateStr, todayStr) {
   return tpl.replace("{n}", `-${past}`);
 }
 
+// ---------- Classification (deadlines vs congresses) ----------
+
 function classifyEvents(events, todayStr) {
   const safe = Array.isArray(events) ? events : [];
 
+  // Only keep events with a usable date (date or start_date) in the future
   const upcoming = safe.filter((ev) => {
-    if (!ev.date) return false;
-    return ev.date >= todayStr;
+    const eventDate = getEventDateISO(ev);
+    return eventDate && eventDate >= todayStr;
   });
 
   const deadlines = [];
@@ -170,17 +189,19 @@ function classifyEvents(events, todayStr) {
     } else if (isCongressType || looksCongressTitle) {
       congresses.push(ev);
     } else {
-      // Fallback: treat as congress if year + series suggest main meeting
+      // Fallback: treat as congress if series+year suggests a main event
       if (ev.series && ev.year && !isDeadlineType) {
         congresses.push(ev);
       } else {
-        deadlines.push(ev); // last resort
+        deadlines.push(ev);
       }
     }
   });
 
   const sortByDatePriority = (a, b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    const da = getEventDateISO(a) || "";
+    const db = getEventDateISO(b) || "";
+    if (da !== db) return da.localeCompare(db);
     const pa = typeof a.priority === "number" ? a.priority : 0;
     const pb = typeof b.priority === "number" ? b.priority : 0;
     return pb - pa;
@@ -191,6 +212,8 @@ function classifyEvents(events, todayStr) {
 
   return { deadlines, congresses };
 }
+
+// ---------- Rendering helpers ----------
 
 function clearContainer(selector) {
   const el = document.querySelector(selector);
@@ -205,6 +228,8 @@ function getTitleForEvent(ev, lang) {
   return ev.title || "(no title)";
 }
 
+// ICS helpers
+
 function toICSDate(isoDate) {
   if (!isoDate) return null;
   const [y, m, d] = isoDate.split("-");
@@ -212,9 +237,27 @@ function toICSDate(isoDate) {
   return `${y}${m}${d}`;
 }
 
+function plusOneDayISO(isoDate) {
+  if (!isoDate) return null;
+  const dt = new Date(isoDate);
+  if (isNaN(dt.getTime())) return null;
+  dt.setDate(dt.getDate() + 1);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function buildICS(ev, lang) {
-  const dtStart = toICSDate(ev.date);
+  const startIso = getEventDateISO(ev);
+  if (!startIso) return null;
+
+  const dtStart = toICSDate(startIso);
   if (!dtStart) return null;
+
+  const endIsoRaw = getEventEndISO(ev) || startIso;
+  const endIso = plusOneDayISO(endIsoRaw) || plusOneDayISO(startIso);
+  const dtEnd = endIso ? toICSDate(endIso) : dtStart;
 
   const nowIso = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
   const dtStamp = `${nowIso}Z`;
@@ -228,7 +271,7 @@ function buildICS(ev, lang) {
 
   const description = descriptionParts.join(" — ");
 
-  const uidBase = ev.id || `${ev.series || "event"}-${ev.date}`;
+  const uidBase = ev.id || `${ev.series || "event"}-${startIso}`;
   const uid = `${uidBase}@anesthesia-congress-calendar`;
 
   const lines = [
@@ -239,7 +282,7 @@ function buildICS(ev, lang) {
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,
     `DTSTART;VALUE=DATE:${dtStart}`,
-    `DTEND;VALUE=DATE:${dtStart}`,
+    `DTEND;VALUE=DATE:${dtEnd}`,
     `SUMMARY:${title}`,
     description ? `DESCRIPTION:${description}` : "",
     ev.link ? `URL:${ev.link}` : "",
@@ -257,7 +300,7 @@ function triggerICSDownload(ev, lang) {
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
-  const safeId = (ev.id || `${ev.series || "event"}-${ev.date || ""}`)
+  const safeId = (ev.id || `${ev.series || "event"}-${getEventDateISO(ev) || ""}`)
     .replace(/[^a-zA-Z0-9-_]/g, "_")
     .slice(0, 40);
   const filename = `${safeId || "event"}.ics`;
@@ -309,14 +352,24 @@ function renderEventList(container, events, i18n, lang, kind) {
     const metaRow = document.createElement("div");
     metaRow.className = "event-meta-row";
 
-    if (ev.date) {
+    // Date chip (supports ranges)
+    const startIso = getEventDateISO(ev);
+    const endIso = ev.end_date || null;
+    if (startIso) {
       const dateChip = document.createElement("span");
       dateChip.className = "event-chip event-date-main";
-      const rel = relativeDayLabel(i18n, lang, ev.date, todayStr);
-      dateChip.textContent = `${formatISODate(ev.date)} • ${rel}`;
+
+      let datePart = formatISODate(startIso);
+      if (endIso && endIso !== startIso) {
+        datePart = `${formatISODate(startIso)}–${formatISODate(endIso)}`;
+      }
+
+      const rel = relativeDayLabel(i18n, lang, startIso, todayStr);
+      dateChip.textContent = `${datePart} • ${rel}`;
       metaRow.appendChild(dateChip);
     }
 
+    // Location
     if (ev.location) {
       const locChip = document.createElement("span");
       locChip.className = "event-chip";
@@ -324,6 +377,7 @@ function renderEventList(container, events, i18n, lang, kind) {
       metaRow.appendChild(locChip);
     }
 
+    // Series
     if (ev.series) {
       const seriesChip = document.createElement("span");
       seriesChip.className = "event-chip event-series";
@@ -333,6 +387,7 @@ function renderEventList(container, events, i18n, lang, kind) {
 
     card.appendChild(metaRow);
 
+    // Links + ICS
     if (ev.link) {
       const linkRow = document.createElement("div");
       linkRow.className = "event-link";
@@ -369,6 +424,8 @@ function renderEventList(container, events, i18n, lang, kind) {
     container.appendChild(card);
   });
 }
+
+// ---------- Static texts & counts ----------
 
 function applyStaticTexts() {
   const { i18n, data, lang } = appState;
@@ -470,6 +527,8 @@ function renderAll() {
   );
 }
 
+// ---------- Language switcher wiring ----------
+
 function setupLangSwitcher() {
   const switchEl = document.querySelector("[data-lang-switch]");
   if (!switchEl) return;
@@ -505,6 +564,8 @@ function setupLangSwitcher() {
 
   updateActive();
 }
+
+// ---------- Main ----------
 
 async function main() {
   try {
