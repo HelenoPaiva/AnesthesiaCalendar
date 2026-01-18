@@ -1,8 +1,7 @@
-// assets/app.js — full calendar logic with i18n, lang switch and ICS export
-// Supports congresses with start_date/end_date (range events).
-// Visible version marker included to defeat "is this file even loaded?" problems.
+// assets/app.js — deadlines + congresses + ICS + language switch
+// + series-based color coding (chips + card glow/shadow)
 
-const APP_VERSION = "2026-01-17 congress-fix-2";
+const APP_VERSION = "2026-01-18 series-colors-chips-1";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -42,6 +41,8 @@ async function fetchJson(url) {
   return json;
 }
 
+// ---------- Language helpers ----------
+
 function getStoredLang() {
   try {
     const v = localStorage.getItem("acc_lang");
@@ -70,6 +71,8 @@ function ui(i18n, key, lang, fallback) {
   return entry[lang] || entry.en || fallback || key;
 }
 
+// ---------- Date helpers ----------
+
 function formatISODate(dateStr) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
@@ -81,7 +84,6 @@ function formatISODate(dateStr) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-// ---- Critical: main date for filtering and relative labels ----
 function getEventStartISO(ev) {
   return ev.date || ev.start_date || null;
 }
@@ -98,13 +100,20 @@ function formatTimeAgo(date, lang) {
   if (sec < 45) return t("just now", "agora mesmo");
 
   const min = Math.round(sec / 60);
-  if (min < 60) return min === 1 ? t("1 minute ago", "há 1 minuto") : t(`${min} minutes ago`, `há ${min} minutos`);
+  if (min < 60) {
+    if (min === 1) return t("1 minute ago", "há 1 minuto");
+    return t(`${min} minutes ago`, `há ${min} minutos`);
+  }
 
   const h = Math.round(min / 60);
-  if (h < 24) return h === 1 ? t("1 hour ago", "há 1 hora") : t(`${h} hours ago`, `há ${h} horas`);
+  if (h < 24) {
+    if (h === 1) return t("1 hour ago", "há 1 hora");
+    return t(`${h} hours ago`, `há ${h} horas`);
+  }
 
   const d = Math.round(h / 24);
-  return d === 1 ? t("1 day ago", "há 1 dia") : t(`${d} days ago`, `há ${d} dias`);
+  if (d === 1) return t("1 day ago", "há 1 dia");
+  return t(`${d} days ago`, `há ${d} dias`);
 }
 
 function relativeDayLabel(i18n, lang, dateStr, todayStr) {
@@ -127,6 +136,8 @@ function relativeDayLabel(i18n, lang, dateStr, todayStr) {
   return tpl.replace("{n}", `-${Math.abs(diff)}`);
 }
 
+// ---------- Classification ----------
+
 function isDeadline(ev) {
   const type = (ev.type || "").toLowerCase();
   const titleStr = (ev.title && (ev.title.en || ev.title.pt)) || ev.title || "";
@@ -146,7 +157,6 @@ function isCongress(ev) {
 function classifyEvents(events, todayStr) {
   const safe = Array.isArray(events) ? events : [];
 
-  // upcoming must consider date OR start_date
   const upcoming = safe.filter((ev) => {
     const startIso = getEventStartISO(ev);
     return startIso && startIso >= todayStr;
@@ -164,7 +174,6 @@ function classifyEvents(events, todayStr) {
       congresses.push(ev);
       return;
     }
-    // fallback
     if (ev.series && ev.year) congresses.push(ev);
     else deadlines.push(ev);
   });
@@ -189,6 +198,34 @@ function classifyEvents(events, todayStr) {
   return { deadlines, congresses };
 }
 
+// ---------- Series color mapping ----------
+
+function normalizeSeriesKey(series) {
+  if (!series) return "";
+  return String(series).trim().toLowerCase();
+}
+
+function seriesToCssClass(series) {
+  const key = normalizeSeriesKey(series);
+  if (!key) return null;
+
+  const map = {
+    "asa": "series-asa",
+    "euroanaesthesia": "series-euroanaesthesia",
+    "euroanesthesia": "series-euroanaesthesia", // safety
+  };
+
+  if (map[key]) return map[key];
+
+  const slug = key
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+
+  if (!slug) return null;
+  return `series-${slug}`;
+}
+
 function clearContainer(selector) {
   const el = document.querySelector(selector);
   if (el) el.innerHTML = "";
@@ -200,7 +237,8 @@ function getTitleForEvent(ev, lang) {
   return ev.title || "(no title)";
 }
 
-// ---- ICS ----
+// ---------- ICS ----------
+
 function toICSDate(isoDate) {
   if (!isoDate) return null;
   const [y, m, d] = isoDate.split("-");
@@ -232,6 +270,7 @@ function buildICS(ev, lang) {
   const dtStamp = `${nowIso}Z`;
 
   const title = getTitleForEvent(ev, lang);
+
   const descriptionParts = [];
   if (ev.series) descriptionParts.push(ev.series);
   if (ev.location) descriptionParts.push(ev.location);
@@ -281,6 +320,8 @@ function triggerICSDownload(ev, lang) {
   URL.revokeObjectURL(url);
 }
 
+// ---------- Rendering ----------
+
 function renderEventList(container, events, i18n, lang, kind) {
   if (!container) return;
   container.innerHTML = "";
@@ -305,6 +346,12 @@ function renderEventList(container, events, i18n, lang, kind) {
   events.forEach((ev) => {
     const card = document.createElement("article");
     card.className = "event-card";
+
+    const sClass = seriesToCssClass(ev.series);
+    if (sClass) {
+      card.classList.add("series-colored");
+      card.classList.add(sClass);
+    }
 
     const titleEl = document.createElement("div");
     titleEl.className = "event-title";
@@ -380,6 +427,8 @@ function renderEventList(container, events, i18n, lang, kind) {
   });
 }
 
+// ---------- Static texts ----------
+
 function applyStaticTexts() {
   const { i18n, data, lang } = appState;
 
@@ -397,12 +446,22 @@ function applyStaticTexts() {
 
   const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
   if (deadlinesTitleEl) {
-    deadlinesTitleEl.textContent = ui(i18n, "next_deadlines", lang, lang === "pt" ? "Próximos prazos" : "Next deadlines");
+    deadlinesTitleEl.textContent = ui(
+      i18n,
+      "next_deadlines",
+      lang,
+      lang === "pt" ? "Próximos prazos" : "Next deadlines"
+    );
   }
 
   const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
   if (congressesTitleEl) {
-    congressesTitleEl.textContent = ui(i18n, "upcoming_congresses", lang, lang === "pt" ? "Próximos congressos" : "Upcoming congresses");
+    congressesTitleEl.textContent = ui(
+      i18n,
+      "upcoming_congresses",
+      lang,
+      lang === "pt" ? "Próximos congressos" : "Upcoming congresses"
+    );
   }
 
   const lastUpdatedEl = document.querySelector("[data-last-updated]");
@@ -437,6 +496,8 @@ function renderAll() {
   renderEventList(congressesContainer, appState.congresses, appState.i18n, appState.lang, "congresses");
 }
 
+// ---------- Language switcher ----------
+
 function setupLangSwitcher() {
   const switchEl = document.querySelector("[data-lang-switch]");
   if (!switchEl) return;
@@ -456,8 +517,10 @@ function setupLangSwitcher() {
       const code = btn.getAttribute("data-lang-btn");
       if (code !== "en" && code !== "pt") return;
       if (code === appState.lang) return;
+
       appState.lang = code;
       try { localStorage.setItem("acc_lang", code); } catch (e) {}
+
       updateActive();
       renderAll();
     });
@@ -465,6 +528,8 @@ function setupLangSwitcher() {
 
   updateActive();
 }
+
+// ---------- Main ----------
 
 async function main() {
   try {
