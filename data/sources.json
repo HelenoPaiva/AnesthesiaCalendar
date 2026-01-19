@@ -4,14 +4,14 @@
       "series": "ASA",
       "priority": 10,
       "sources": [
-          {
-            "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
-            "trust": 100
-          },
-          {
-            "url": "https://www.asahq.org/annualmeeting/education/submissions",
-            "trust": 100
-          }
+        {
+          "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+          "trust": 100
+        },
+        {
+          "url": "https://www.asahq.org/annualmeeting/education/submissions",
+          "trust": 100
+        }
       ]
     },
 
@@ -23,8 +23,10 @@
 
     {
       "series": "COPA",
-      "priority": 7,
-      "urls": []
+      "priority": 8,
+      "urls": [
+        "https://copa2026.saesp.org.br/en/"
+      ]
     },
 
     {
