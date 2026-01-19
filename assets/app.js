@@ -1,10 +1,10 @@
-// assets/app.js
-// FINAL SIMPLIFIED CHIP LOGIC
-// - Congresses: DATE CHIP ONLY (series color applied)
-// - Deadlines: DATE CHIP + SERIES CHIP ONLY
+// assets/app.js — OPERATIONAL VERSION (lang + last-updated + counts)
+// Simplified chips:
+// - Congresses: DATE CHIP ONLY (series color applies to card + date chip)
+// - Deadlines: DATE CHIP + SERIES CHIP ONLY (series chip matches series color)
 // - No location chips anywhere
 
-const APP_VERSION = "2026-01-18 simplified-chips-1";
+const APP_VERSION = "2026-01-18 operational-simplified-chips-1";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -35,33 +35,82 @@ const appState = {
 
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-  return res.json();
+  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  const json = await res.json();
+  console.log("[ACC]", APP_VERSION, "Loaded", url, "keys:", Object.keys(json || {}));
+  return json;
 }
 
 // ------------------ Language ------------------
 
-function chooseInitialLang() {
+function getStoredLang() {
   try {
-    const stored = localStorage.getItem("acc_lang");
-    if (stored === "en" || stored === "pt") return stored;
-  } catch {}
-  return navigator.language?.startsWith("pt") ? "pt" : "en";
+    const v = localStorage.getItem("acc_lang");
+    if (v === "en" || v === "pt") return v;
+  } catch (e) {}
+  return null;
+}
+
+function chooseInitialLang() {
+  const params = new URLSearchParams(window.location.search);
+  const paramLang = params.get("lang");
+  if (paramLang === "pt" || paramLang === "en") return paramLang;
+
+  const stored = getStoredLang();
+  if (stored) return stored;
+
+  const nav = navigator.language || navigator.userLanguage || "en";
+  return nav.toLowerCase().startsWith("pt") ? "pt" : "en";
 }
 
 function ui(i18n, key, lang, fallback) {
   return i18n?.ui?.[key]?.[lang] || i18n?.ui?.[key]?.en || fallback || key;
 }
 
+function setupLangSwitcher() {
+  const switchEl = document.querySelector("[data-lang-switch]");
+  if (!switchEl) return;
+
+  const buttons = Array.from(switchEl.querySelectorAll("[data-lang-btn]"));
+
+  function updateActive() {
+    buttons.forEach((btn) => {
+      const code = btn.getAttribute("data-lang-btn");
+      if (code === appState.lang) btn.classList.add("lang-btn--active");
+      else btn.classList.remove("lang-btn--active");
+    });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const code = btn.getAttribute("data-lang-btn");
+      if (code !== "en" && code !== "pt") return;
+      if (code === appState.lang) return;
+
+      appState.lang = code;
+      try {
+        localStorage.setItem("acc_lang", code);
+      } catch (e) {}
+
+      updateActive();
+      renderAll();
+    });
+  });
+
+  updateActive();
+}
+
 // ------------------ Dates ------------------
 
-function formatISODate(d) {
-  if (!d) return "";
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
-  return `${String(dt.getDate()).padStart(2, "0")}/${String(
-    dt.getMonth() + 1
-  ).padStart(2, "0")}/${dt.getFullYear()}`;
+function formatISODate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map((v) => parseInt(v, 10));
+  if (!y || !m || !d) return iso;
+  const dt = new Date(y, m - 1, d);
+  return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}/${dt.getFullYear()}`;
 }
 
 function getStart(ev) {
@@ -71,33 +120,62 @@ function getEnd(ev) {
   return ev.end_date || ev.date || ev.start_date || null;
 }
 
-function relativeLabel(dateStr, lang) {
-  const today = new Date();
+function relativeDayLabel(i18n, lang, dateStr, todayStr) {
+  if (!dateStr) return "";
   const d = new Date(dateStr);
-  const diff = Math.round((d - today) / (24 * 60 * 60 * 1000));
+  const today = new Date(todayStr);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const diff = Math.round((d - today) / msPerDay);
 
-  if (diff === 0) return lang === "pt" ? "hoje" : "today";
-  if (diff > 0)
-    return lang === "pt" ? `em ${diff} dias` : `in ${diff} days`;
-  return lang === "pt"
-    ? `há ${Math.abs(diff)} dias`
-    : `${Math.abs(diff)} days ago`;
+  if (diff === 0) return ui(i18n, "today", lang, lang === "pt" ? "Hoje" : "Today");
+
+  const tpl = ui(
+    i18n,
+    "in_days",
+    lang,
+    lang === "pt" ? "em {n} dias" : "in {n} days"
+  );
+
+  if (diff > 0) return tpl.replace("{n}", diff);
+  return tpl.replace("{n}", `-${Math.abs(diff)}`);
+}
+
+function formatTimeAgo(date, lang) {
+  if (!date || isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const sec = Math.round((now - date) / 1000);
+
+  const t = (en, pt) => (lang === "pt" ? pt : en);
+
+  if (sec < 45) return t("just now", "agora mesmo");
+
+  const min = Math.round(sec / 60);
+  if (min < 60) return min === 1 ? t("1 minute ago", "há 1 minuto") : t(`${min} minutes ago`, `há ${min} minutos`);
+
+  const h = Math.round(min / 60);
+  if (h < 24) return h === 1 ? t("1 hour ago", "há 1 hora") : t(`${h} hours ago`, `há ${h} horas`);
+
+  const d = Math.round(h / 24);
+  return d === 1 ? t("1 day ago", "há 1 dia") : t(`${d} days ago`, `há ${d} dias`);
 }
 
 // ------------------ Classification ------------------
 
 function isDeadline(ev) {
-  return DEADLINE_TYPES.some((t) => (ev.type || "").includes(t));
+  const type = (ev.type || "").toLowerCase();
+  return DEADLINE_TYPES.some((t) => type.includes(t));
 }
 
 function isCongress(ev) {
-  return CONGRESS_TYPES.some((t) => (ev.type || "").includes(t));
+  const type = (ev.type || "").toLowerCase();
+  return CONGRESS_TYPES.some((t) => type.includes(t));
 }
 
 function classifyEvents(events) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  const upcoming = events.filter((ev) => {
+  const upcoming = (Array.isArray(events) ? events : []).filter((ev) => {
     const s = getStart(ev);
     return s && s >= todayStr;
   });
@@ -110,172 +188,295 @@ function classifyEvents(events) {
     else deadlines.push(ev);
   });
 
-  const sortFn = (a, b) =>
-    (getStart(a) || "").localeCompare(getStart(b) || "");
-
+  const sortFn = (a, b) => (getStart(a) || "").localeCompare(getStart(b) || "");
   deadlines.sort(sortFn);
   congresses.sort(sortFn);
 
   return { deadlines, congresses };
 }
 
-// ------------------ Series → CSS class ------------------
+// ------------------ Series color mapping ------------------
 
 function seriesToCssClass(series) {
   if (!series) return null;
-  const key = series.toLowerCase();
+  const key = String(series).trim().toLowerCase();
   if (key === "asa") return "series-asa";
-  if (key.startsWith("euro")) return "series-euroanaesthesia";
-  return `series-${key.replace(/[^a-z0-9]+/g, "-")}`;
+  if (key === "euroanaesthesia" || key === "euroanesthesia") return "series-euroanaesthesia";
+  return `series-${key.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40)}`;
 }
 
-// ------------------ Rendering ------------------
+// ------------------ ICS ------------------
 
-function renderList(container, events, lang, kind) {
+function toICSDate(iso) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return null;
+  return `${y}${m}${d}`;
+}
+
+function plusOneDayISO(iso) {
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return null;
+  dt.setDate(dt.getDate() + 1);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function buildICS(ev, lang) {
+  const startIso = getStart(ev);
+  if (!startIso) return null;
+
+  const endIsoRaw = getEnd(ev) || startIso;
+  const endIso = plusOneDayISO(endIsoRaw) || plusOneDayISO(startIso);
+
+  const dtStart = toICSDate(startIso);
+  const dtEnd = toICSDate(endIso);
+
+  const nowIso = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
+  const dtStamp = `${nowIso}Z`;
+
+  const title = ev.title?.[lang] || ev.title?.en || ev.title || "(no title)";
+  const uidBase = ev.id || `${ev.series || "event"}-${startIso}`;
+  const uid = `${uidBase}@anesthesia-congress-calendar`;
+
+  const descriptionParts = [];
+  if (ev.series) descriptionParts.push(ev.series);
+  if (ev.link) descriptionParts.push(ev.link);
+  const description = descriptionParts.join(" — ");
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//AnesthesiaCongressCalendar//EN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART;VALUE=DATE:${dtStart}`,
+    `DTEND;VALUE=DATE:${dtEnd}`,
+    `SUMMARY:${title}`,
+    description ? `DESCRIPTION:${description}` : "",
+    ev.link ? `URL:${ev.link}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean);
+
+  return lines.join("\r\n");
+}
+
+function triggerICSDownload(ev, lang) {
+  const ics = buildICS(ev, lang);
+  if (!ics) return;
+
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const safeId = (ev.id || `${ev.series || "event"}-${getStart(ev) || ""}`)
+    .replace(/[^a-zA-Z0-9-_]/g, "_")
+    .slice(0, 60);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${safeId || "event"}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ------------------ Rendering (chip rules enforced here) ------------------
+
+function clearContainer(selector) {
+  const el = document.querySelector(selector);
+  if (el) el.innerHTML = "";
+  return el;
+}
+
+function renderEventList(container, events, kind) {
+  const { i18n, lang } = appState;
+  if (!container) return;
+
   container.innerHTML = "";
 
-  if (!events.length) {
-    container.innerHTML = `<div class="empty-state">${
-      lang === "pt" ? "Nenhum item." : "No items."
-    }</div>`;
+  if (!events || events.length === 0) {
+    const msg =
+      kind === "deadlines"
+        ? ui(i18n, "no_deadlines", lang, lang === "pt" ? "Nenhum prazo futuro." : "No upcoming deadlines.")
+        : ui(i18n, "no_congresses", lang, lang === "pt" ? "Nenhum congresso futuro." : "No upcoming congresses.");
+
+    const div = document.createElement("div");
+    div.className = "empty-state";
+    div.textContent = msg;
+    container.appendChild(div);
     return;
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+
   events.forEach((ev) => {
     const card = document.createElement("article");
-    card.className = "event-card series-colored";
+    card.className = "event-card";
 
+    // series coloring applied to card + date chip
     const sc = seriesToCssClass(ev.series);
-    if (sc) card.classList.add(sc);
+    if (sc) {
+      card.classList.add("series-colored");
+      card.classList.add(sc);
+    }
 
     const title = document.createElement("div");
     title.className = "event-title";
-    title.textContent =
-      ev.title?.[lang] || ev.title?.en || ev.title || "";
+    title.textContent = ev.title?.[lang] || ev.title?.en || ev.title || "(no title)";
     card.appendChild(title);
 
-    const meta = document.createElement("div");
-    meta.className = "event-meta-row";
+    const metaRow = document.createElement("div");
+    metaRow.className = "event-meta-row";
 
     // DATE CHIP (always)
-    const start = getStart(ev);
-    const end = getEnd(ev);
+    const startIso = getStart(ev);
+    const endIso = getEnd(ev);
+    if (startIso) {
+      const dateChip = document.createElement("span");
+      dateChip.className = "event-chip event-date-main";
 
-    if (start) {
-      const chip = document.createElement("span");
-      chip.className = "event-chip event-date-main";
+      let datePart = formatISODate(startIso);
+      if (endIso && endIso !== startIso) datePart += `–${formatISODate(endIso)}`;
 
-      let txt = formatISODate(start);
-      if (end && end !== start)
-        txt += `–${formatISODate(end)}`;
-
-      txt += ` • ${relativeLabel(start, lang)}`;
-      chip.textContent = txt;
-      meta.appendChild(chip);
+      const rel = relativeDayLabel(i18n, lang, startIso, todayStr);
+      dateChip.textContent = `${datePart} • ${rel}`;
+      metaRow.appendChild(dateChip);
     }
 
-    // SERIES CHIP (deadlines only)
+    // SERIES CHIP (deadlines only, requested)
     if (kind === "deadlines" && ev.series) {
-      const s = document.createElement("span");
-      s.className = "event-chip event-series";
-      s.textContent = ev.series;
-      meta.appendChild(s);
+      const seriesChip = document.createElement("span");
+      seriesChip.className = "event-chip event-series";
+      seriesChip.textContent = ev.series;
+      metaRow.appendChild(seriesChip);
     }
 
-    card.appendChild(meta);
+    card.appendChild(metaRow);
 
+    // link + ICS (kept)
     if (ev.link) {
-      const row = document.createElement("div");
-      row.className = "event-link";
+      const linkRow = document.createElement("div");
+      linkRow.className = "event-link";
 
-      const a = document.createElement("a");
-      a.href = ev.link;
-      a.target = "_blank";
-      a.textContent = ui(
-        appState.i18n,
-        "open",
-        lang,
-        lang === "pt" ? "Abrir" : "Open"
-      );
-      row.appendChild(a);
+      const openAnchor = document.createElement("a");
+      openAnchor.href = ev.link;
+      openAnchor.target = "_blank";
+      openAnchor.rel = "noreferrer noopener";
+      openAnchor.textContent = ui(i18n, "open", lang, lang === "pt" ? "Abrir" : "Open");
+      linkRow.appendChild(openAnchor);
 
-      const btn = document.createElement("button");
-      btn.className = "event-ics-btn";
-      btn.textContent =
-        lang === "pt"
-          ? "Adicionar ao calendário"
-          : "Save to calendar";
-      btn.onclick = () => triggerICS(ev, lang);
-      row.appendChild(btn);
+      const sep = document.createElement("span");
+      sep.textContent = "·";
+      linkRow.appendChild(sep);
 
-      card.appendChild(row);
+      const icsBtn = document.createElement("button");
+      icsBtn.type = "button";
+      icsBtn.className = "event-ics-btn";
+      icsBtn.textContent = lang === "pt" ? "Adicionar ao calendário" : "Save to calendar";
+      icsBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerICSDownload(ev, lang);
+      });
+      linkRow.appendChild(icsBtn);
+
+      card.appendChild(linkRow);
     }
 
     container.appendChild(card);
   });
 }
 
-// ------------------ ICS ------------------
+// ------------------ Static texts (last updated + counts + titles + version) ------------------
 
-function triggerICS(ev, lang) {
-  const s = getStart(ev);
-  if (!s) return;
+function applyStaticTexts() {
+  const { i18n, data, lang } = appState;
 
-  const e = getEnd(ev) || s;
+  const subtitleEl = document.querySelector("[data-subtitle]");
+  if (subtitleEl) {
+    subtitleEl.textContent = ui(
+      i18n,
+      "subtitle",
+      lang,
+      lang === "pt"
+        ? "Prazos e datas de congressos — auto-atualizado."
+        : "Upcoming deadlines and congress dates — auto-updated."
+    );
+  }
 
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "BEGIN:VEVENT",
-    `DTSTART;VALUE=DATE:${s.replace(/-/g, "")}`,
-    `DTEND;VALUE=DATE:${e.replace(/-/g, "")}`,
-    `SUMMARY:${ev.title?.[lang] || ev.title?.en || ev.title}`,
-    ev.link ? `URL:${ev.link}` : "",
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ]
-    .filter(Boolean)
-    .join("\r\n");
+  const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
+  if (deadlinesTitleEl) {
+    deadlinesTitleEl.textContent = ui(i18n, "next_deadlines", lang, lang === "pt" ? "Próximos prazos" : "Next deadlines");
+  }
 
-  const blob = new Blob([ics], { type: "text/calendar" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${ev.id || "event"}.ics`;
-  a.click();
+  const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
+  if (congressesTitleEl) {
+    congressesTitleEl.textContent = ui(i18n, "upcoming_congresses", lang, lang === "pt" ? "Próximos congressos" : "Upcoming congresses");
+  }
+
+  const dlCount = document.querySelector("[data-next-deadlines-count]");
+  if (dlCount) dlCount.textContent = lang === "pt" ? `${appState.deadlines.length} item(ns)` : `${appState.deadlines.length} item(s)`;
+
+  const cgCount = document.querySelector("[data-upcoming-congresses-count]");
+  if (cgCount) cgCount.textContent = lang === "pt" ? `${appState.congresses.length} item(ns)` : `${appState.congresses.length} item(s)`;
+
+  const lastUpdatedEl = document.querySelector("[data-last-updated]");
+  if (lastUpdatedEl) {
+    const label = ui(i18n, "last_updated", lang, lang === "pt" ? "Atualizado" : "Last updated");
+    let dt = null;
+    if (data?.generated_at) {
+      const parsed = new Date(data.generated_at);
+      if (!isNaN(parsed.getTime())) dt = parsed;
+    }
+    if (!dt) dt = new Date();
+    lastUpdatedEl.textContent = `${label}: ${formatTimeAgo(dt, lang)}`;
+  }
+
+  const verEl = document.querySelector("[data-app-version]");
+  if (verEl) verEl.textContent = `app: ${APP_VERSION}`;
+}
+
+function renderAll() {
+  applyStaticTexts();
+
+  renderEventList(clearContainer("[data-next-deadlines]"), appState.deadlines, "deadlines");
+  renderEventList(clearContainer("[data-upcoming-congresses]"), appState.congresses, "congresses");
 }
 
 // ------------------ Main ------------------
 
 async function main() {
-  const [i18n, data] = await Promise.all([
-    fetchJson(I18N_URL),
-    fetchJson(DATA_URL),
-  ]);
+  try {
+    const [i18n, data] = await Promise.all([fetchJson(I18N_URL), fetchJson(DATA_URL)]);
 
-  const { deadlines, congresses } = classifyEvents(data.events);
+    if (!Array.isArray(data.events)) {
+      console.error("events.json payload:", data);
+      throw new Error("events.json missing {events: []}");
+    }
 
-  appState.i18n = i18n;
-  appState.data = data;
-  appState.deadlines = deadlines;
-  appState.congresses = congresses;
-  appState.lang = chooseInitialLang();
+    const { deadlines, congresses } = classifyEvents(data.events);
 
-  renderList(
-    document.querySelector("[data-next-deadlines]"),
-    deadlines,
-    appState.lang,
-    "deadlines"
-  );
+    appState.i18n = i18n;
+    appState.data = data;
+    appState.deadlines = deadlines;
+    appState.congresses = congresses;
+    appState.lang = chooseInitialLang();
 
-  renderList(
-    document.querySelector("[data-upcoming-congresses]"),
-    congresses,
-    appState.lang,
-    "congresses"
-  );
-
-  document.querySelector("[data-app-version]").textContent =
-    "app: " + APP_VERSION;
+    setupLangSwitcher();
+    renderAll();
+  } catch (err) {
+    console.error("[ACC] Fatal error:", err);
+    const container = document.querySelector("[data-next-deadlines]") || document.body;
+    const div = document.createElement("div");
+    div.className = "empty-state error-state";
+    div.textContent = "Error loading calendar data. Check console logs for details.";
+    container.appendChild(div);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", main);
