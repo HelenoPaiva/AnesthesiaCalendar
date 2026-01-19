@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-19T15:56:36+00:00",
+  "generated_at": "2026-01-19T16:25:24+00:00",
   "events": [
     {
       "series": "ASA",
@@ -210,7 +210,7 @@
       "end_date": "2025-04-27",
       "location": "Transamerica Expo Center, São Paulo, Brazil",
       "link": "https://copa2026.saesp.org.br/en/",
-      "priority": 8,
+      "priority": 7,
       "title": {
         "en": "COPA SAESP 2025 — Paulista Congress of Anesthesiology",
         "pt": "COPA SAESP 2025 — Congresso Paulista de Anestesiologia"
@@ -222,6 +222,26 @@
       },
       "source": "scraped",
       "id": "copa-2025-congress-c6e86bf7a6"
+    },
+    {
+      "series": "COPA",
+      "year": 2025,
+      "type": "abstract_deadline",
+      "date": "2026-01-30",
+      "location": "Transamerica Expo Center, São Paulo, Brazil",
+      "link": "https://copa2026.saesp.org.br/temas-livres/",
+      "priority": 6,
+      "title": {
+        "en": "COPA SAESP 2025 — Abstract submission deadline",
+        "pt": "COPA SAESP 2025 — Prazo final de submissão de trabalhos"
+      },
+      "evidence": {
+        "url": "https://copa2026.saesp.org.br/temas-livres/",
+        "snippet": "Submeta seu trabalho até 30 de janeiro de 2026",
+        "field": "abstract_deadline_snippet"
+      },
+      "source": "scraped",
+      "id": "copa-2025-abstract_deadline-44d1dc79b6"
     },
     {
       "series": "EUROANAESTHESIA",
