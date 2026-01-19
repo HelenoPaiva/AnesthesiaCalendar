@@ -21,14 +21,11 @@
       "urls": []
     },
 
-  {
-  "COPA": {
-    "label": "COPA SAESP — Paulista Congress of Anesthesiology",
-    "urls": [
-      "https://copa2026.saesp.org.br/en/"
-    ]
-  }
-}
+    {
+      "series": "COPA",
+      "priority": 7,
+      "urls": []
+    },
 
     {
       "series": "WCA",
