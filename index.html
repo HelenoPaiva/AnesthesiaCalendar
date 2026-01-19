@@ -3,404 +3,109 @@
   <head>
     <meta charset="UTF-8" />
     <title>Anesthesia congress calendar</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Upcoming deadlines and anesthesia congress dates — auto-updated from official sources."
+    />
 
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #050816;
-        --bg-soft: #0b1120;
-        --card-bg: #020617;
-        --card-border: rgba(148, 163, 184, 0.3);
-        --accent: #38bdf8;
-        --accent-soft: rgba(56, 189, 248, 0.18);
-        --accent-strong: #0ea5e9;
-        --text-main: #e5e7eb;
-        --text-soft: #9ca3af;
-        --chip-bg: rgba(15, 23, 42, 0.9);
-        --danger: #f97373;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          "Segoe UI", sans-serif;
-        background: radial-gradient(circle at top, #1d283a 0, #020617 60%, #000 100%);
-        color: var(--text-main);
-        min-height: 100vh;
-      }
-
-      .page {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 24px 16px 40px;
-      }
-
-      header {
-        margin-bottom: 24px;
-      }
-
-      .header-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-      }
-
-      h1 {
-        font-size: 1.7rem;
-        font-weight: 650;
-        letter-spacing: 0.02em;
-        margin-bottom: 6px;
-      }
-
-      .subtitle {
-        font-size: 0.95rem;
-        color: var(--text-soft);
-        max-width: 700px;
-      }
-
-      .lang-switch {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(148, 163, 184, 0.45);
-        gap: 2px;
-      }
-
-      .lang-btn {
-        border: none;
-        padding: 4px 10px;
-        font-size: 0.78rem;
-        border-radius: 999px;
-        background: transparent;
-        color: var(--text-soft);
-        cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease;
-      }
-
-      .lang-btn--active {
-        background: var(--accent);
-        color: #020617;
-        font-weight: 600;
-      }
-
-      @media (max-width: 640px) {
-        .header-top {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 10px;
-        }
-      }
-
-      .chips-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 14px;
-      }
-
-      .chip {
-        font-size: 0.8rem;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: var(--chip-bg);
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        color: var(--text-soft);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .chip-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--accent);
-      }
-
-      main {
-        margin-top: 8px;
-      }
-
-      .columns {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-        gap: 18px;
-      }
-
-      @media (max-width: 800px) {
-        .columns {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .col {
-        background: linear-gradient(135deg, var(--bg-soft), #020617);
-        border-radius: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        padding: 16px 14px 16px;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
-      }
-
-      .col-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 10px;
-        margin-bottom: 8px;
-      }
-
-      .col-title {
-        font-size: 1.05rem;
-        font-weight: 600;
-      }
-
-      .col-count {
-        font-size: 0.8rem;
-        color: var(--text-soft);
-      }
-
-      .list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-top: 6px;
-      }
-
-      /* --- Event card base --- */
-      .event-card {
-        background: radial-gradient(circle at top left, #0f172a, var(--card-bg));
-        border-radius: 12px;
-        padding: 10px 11px 8px;
-        border: 1px solid var(--card-border);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        box-shadow: 0 10px 26px rgba(2, 6, 23, 0.55);
-        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
-      }
-
-      .event-card:hover {
-        transform: translateY(-1px);
-      }
-
-      .event-title {
-        font-size: 0.95rem;
-        font-weight: 550;
-      }
-
-      .event-meta-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 10px;
-        font-size: 0.78rem;
-        color: var(--text-soft);
-      }
-
-      .event-chip {
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: rgba(15, 23, 42, 0.8);
-      }
-
-      .event-date-main {
-        color: var(--accent);
-        font-weight: 500;
-        border-color: var(--accent-soft);
-        background: var(--accent-soft);
-      }
-
-      .event-series {
-        opacity: 0.9;
-      }
-
-      .event-link {
-        margin-top: 2px;
-        font-size: 0.78rem;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .event-link a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-
-      .event-link a:hover {
-        text-decoration: underline;
-      }
-
-      .event-ics-btn {
-        border: none;
-        background: none;
-        color: var(--text-soft);
-        cursor: pointer;
-        padding: 0;
-        font-size: 0.78rem;
-      }
-
-      .event-ics-btn:hover {
-        color: var(--accent-strong);
-        text-decoration: underline;
-      }
-
-      /* ----------------------------------------
-         Series color system (chips + card glow)
-         ---------------------------------------- */
-
-      .event-card {
-        --series-accent: rgba(148, 163, 184, 0.85);
-        --series-accent-soft: rgba(148, 163, 184, 0.16);
-        --series-glow: rgba(148, 163, 184, 0.10);
-      }
-
-      .event-card.series-colored .event-date-main {
-        color: var(--series-accent);
-        background: var(--series-accent-soft);
-        border-color: var(--series-accent-soft);
-      }
-
-      .event-card.series-colored .event-chip.event-series {
-        border-color: var(--series-accent-soft);
-        background: rgba(15, 23, 42, 0.7);
-        color: var(--text-main);
-      }
-
-      .event-card.series-colored {
-        border-color: rgba(148, 163, 184, 0.35);
-        box-shadow:
-          0 10px 26px rgba(2, 6, 23, 0.55),
-          0 0 0 1px rgba(148, 163, 184, 0.14),
-          0 0 34px var(--series-glow);
-      }
-
-      .event-card.series-colored:hover {
-        border-color: var(--series-accent-soft);
-        box-shadow:
-          0 12px 30px rgba(2, 6, 23, 0.6),
-          0 0 0 1px rgba(148, 163, 184, 0.16),
-          0 0 46px var(--series-glow);
-      }
-
-      /* ASA colors */
-      .series-asa {
-        --series-accent: rgba(56, 189, 248, 0.95);
-        --series-accent-soft: rgba(56, 189, 248, 0.20);
-        --series-glow: rgba(56, 189, 248, 0.18);
-      }
-
-      /* Euroanaesthesia colors */
-      .series-euroanaesthesia {
-        --series-accent: rgba(168, 85, 247, 0.95);
-        --series-accent-soft: rgba(168, 85, 247, 0.18);
-        --series-glow: rgba(168, 85, 247, 0.16);
-      }
-
-      /* You can add more series later:
-         .series-esra { ... }
-         .series-esaic { ... }
-         .series-wfsa { ... }
-      */
-
-      .empty-state {
-        font-size: 0.85rem;
-        color: var(--text-soft);
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px dashed rgba(148, 163, 184, 0.5);
-        background: rgba(15, 23, 42, 0.6);
-      }
-
-      .error-state {
-        border-color: rgba(248, 113, 113, 0.8);
-        color: var(--danger);
-      }
-
-      footer {
-        margin-top: 24px;
-        font-size: 0.75rem;
-        color: var(--text-soft);
-        text-align: right;
-        opacity: 0.75;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      footer a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-
-      footer a:hover {
-        text-decoration: underline;
-      }
-    </style>
+    <link rel="stylesheet" href="./assets/styles.css" />
   </head>
-
   <body>
-    <div class="page">
-      <header>
-        <div class="header-top">
-          <div>
-            <h1>Anesthesia congress calendar</h1>
-            <p class="subtitle" data-subtitle></p>
+    <main class="app-root">
+      <!-- Header -->
+      <header class="app-header">
+        <h1 class="app-title">Anesthesia congress calendar</h1>
+
+        <p class="app-subtitle" data-subtitle>
+          Upcoming deadlines and congress dates — auto-updated.
+        </p>
+
+        <!-- GitHub repo link (just under subtitle) -->
+        <a
+          class="repo-link"
+          href="https://github.com/HelenoPaiva/AnesthesiaCalendar"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          View source on GitHub
+        </a>
+
+        <!-- Top row: last updated + language switch -->
+        <div class="app-top-row">
+          <div class="last-updated-chip">
+            <span class="last-updated-dot"></span>
+            <span data-last-updated>Last updated: —</span>
           </div>
 
           <div class="lang-switch" data-lang-switch>
-            <button class="lang-btn" data-lang-btn="en">EN</button>
-            <button class="lang-btn" data-lang-btn="pt">PT</button>
-          </div>
-        </div>
-
-        <div class="chips-row">
-          <div class="chip">
-            <span class="chip-dot"></span>
-            <span data-last-updated>…</span>
+            <button
+              type="button"
+              class="lang-btn lang-btn--active"
+              data-lang-btn="en"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              class="lang-btn"
+              data-lang-btn="pt"
+            >
+              PT
+            </button>
           </div>
         </div>
       </header>
 
-      <main>
-        <section class="columns">
-          <div class="col">
-            <div class="col-header">
-              <h2 class="col-title" data-next-deadlines-title>Next deadlines</h2>
-              <div class="col-count" data-next-deadlines-count></div>
-            </div>
-            <div class="list" data-next-deadlines></div>
+      <!-- Columns: CONGRESSES FIRST (left / first on mobile), DEADLINES SECOND -->
+      <div class="app-columns">
+        <!-- Upcoming congresses (LEFT / FIRST) -->
+        <section class="section-card">
+          <div class="section-header-row">
+            <h2 class="section-title" data-upcoming-congresses-title>
+              Upcoming congresses
+            </h2>
+            <span
+              class="section-count"
+              data-upcoming-congresses-count
+            >
+              0 item(s)
+            </span>
           </div>
 
-          <div class="col">
-            <div class="col-header">
-              <h2 class="col-title" data-upcoming-congresses-title>
-                Upcoming congresses
-              </h2>
-              <div class="col-count" data-upcoming-congresses-count></div>
-            </div>
-            <div class="list" data-upcoming-congresses></div>
-          </div>
+          <div data-upcoming-congresses></div>
         </section>
-      </main>
 
-      <footer>
-        <span>Static GitHub Pages — data from local JSON files.</span>
-        <span data-app-version>app: …</span>
+        <!-- Next deadlines (RIGHT / SECOND) -->
+        <section class="section-card">
+          <div class="section-header-row">
+            <h2 class="section-title" data-next-deadlines-title>
+              Next deadlines
+            </h2>
+            <span
+              class="section-count"
+              data-next-deadlines-count
+            >
+              0 item(s)
+            </span>
+          </div>
+
+          <div data-next-deadlines></div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div>
+          Static GitHub Pages — data from local JSON files.
+        </div>
+        <div class="app-version" data-app-version></div>
       </footer>
-    </div>
+    </main>
 
-    <script src="assets/app.js?v=20260118_series_colors_chips" defer></script>
+    <script src="./assets/app.js" defer></script>
   </body>
 </html>
