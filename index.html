@@ -144,7 +144,6 @@
       font-size: 0.82rem;
       padding: 6px 28px 6px 10px;
       appearance: none;
-      position: relative;
     }
 
     .filters select:focus {
@@ -167,7 +166,7 @@
       gap: 8px;
     }
 
-    /* The whole card is now a clickable link */
+    /* Entire card is the link */
     .event-card {
       display: block;
       text-decoration: none;
@@ -210,7 +209,7 @@
       box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
     }
 
-    /* Color by series – full pill */
+    /* Color pills by series */
     .series-colored {
       color: #f9fafb;
     }
@@ -373,3 +372,275 @@
       <div id="eventsList" class="events-list"></div>
       <div id="emptyState" class="empty-state" style="display: none;">
         No events match the current filters.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // --- Helpers ---
+
+    function parseISODate(iso) {
+      if (!iso) return null;
+      var parts = iso.split("-");
+      return new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    }
+
+    function formatEventDateRange(ev) {
+      var start = parseISODate(ev.date);
+      var end = ev.end_date ? parseISODate(ev.end_date) : null;
+      if (!start) return "";
+
+      var opts = { day: "2-digit", month: "2-digit", year: "numeric" };
+      var startStr = start.toLocaleDateString("pt-BR", opts);
+      var rangeStr = startStr;
+
+      if (end) {
+        var endStr = end.toLocaleDateString("pt-BR", opts);
+        rangeStr = startStr + "–" + endStr;
+      }
+
+      var today = new Date();
+      var todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var msPerDay = 24 * 60 * 60 * 1000;
+      var diffDays = Math.round((start - todayMid) / msPerDay);
+
+      var suffix = "";
+      if (diffDays === 0) {
+        suffix = " • today";
+      } else if (diffDays > 0) {
+        suffix = " • in " + diffDays + " day" + (diffDays === 1 ? "" : "s");
+      } else {
+        var a = Math.abs(diffDays);
+        suffix = " • " + a + " day" + (a === 1 ? "" : "s") + " ago";
+      }
+
+      return rangeStr + suffix;
+    }
+
+    function normalizeSeriesSlug(series) {
+      if (!series) return "other";
+      return series.toString().trim().toLowerCase();
+    }
+
+    // Congress first, other events, then deadlines
+    function eventTypePriority(ev) {
+      var t = (ev.type || "").toLowerCase();
+      if (t === "congress" || t === "main_congress" || t === "main") return 0;
+      if (t.indexOf("deadline") !== -1) return 2;
+      return 1; // everything else
+    }
+
+    function sortEvents(events) {
+      return events.slice().sort(function (a, b) {
+        var pa = eventTypePriority(a);
+        var pb = eventTypePriority(b);
+        if (pa !== pb) return pa - pb;
+
+        var da = a.date || "";
+        var db = b.date || "";
+        if (da !== db) return da.localeCompare(db);
+
+        var prA = typeof a.priority === "number" ? -a.priority : 0;
+        var prB = typeof b.priority === "number" ? -b.priority : 0;
+        if (prA !== prB) return prA - prB;
+
+        var titleA =
+          (a.title && (a.title.en || a.title.pt)) ||
+          a.title ||
+          "";
+        var titleB =
+          (b.title && (b.title.en || b.title.pt)) ||
+          b.title ||
+          "";
+        return titleA.localeCompare(titleB);
+      });
+    }
+
+    function buildFilters(events) {
+      var yearSelect = document.getElementById("yearFilter");
+      var seriesSelect = document.getElementById("seriesFilter");
+
+      var yearSet = {};
+      var seriesSet = {};
+
+      events.forEach(function (ev) {
+        if (ev.year) yearSet[ev.year] = true;
+        var s = ev.series || "Other";
+        seriesSet[s] = true;
+      });
+
+      Object.keys(yearSet)
+        .sort()
+        .forEach(function (y) {
+          var opt = document.createElement("option");
+          opt.value = String(y);
+          opt.textContent = y;
+          yearSelect.appendChild(opt);
+        });
+
+      Object.keys(seriesSet)
+        .sort()
+        .forEach(function (s) {
+          var opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = s;
+          seriesSelect.appendChild(opt);
+        });
+    }
+
+    function passesFilters(ev, yearFilter, seriesFilter) {
+      if (yearFilter !== "all" && String(ev.year) !== yearFilter) return false;
+      if (seriesFilter !== "all" && (ev.series || "Other") !== seriesFilter)
+        return false;
+      return true;
+    }
+
+    function renderEvents(events) {
+      var listEl = document.getElementById("eventsList");
+      var emptyEl = document.getElementById("emptyState");
+      listEl.innerHTML = "";
+
+      var yearFilter = document.getElementById("yearFilter").value;
+      var seriesFilter = document.getElementById("seriesFilter").value;
+
+      var filtered = events.filter(function (ev) {
+        return passesFilters(ev, yearFilter, seriesFilter);
+      });
+
+      if (!filtered.length) {
+        emptyEl.style.display = "block";
+        return;
+      }
+      emptyEl.style.display = "none";
+
+      filtered.forEach(function (ev) {
+        var seriesSlug = normalizeSeriesSlug(ev.series);
+        var seriesClass = "series-" + seriesSlug;
+        var allowed =
+          [
+            "series-asa",
+            "series-esaic",
+            "series-esra",
+            "series-wca",
+            "series-larac",
+            "series-soc",
+          ].indexOf(seriesClass) !== -1
+            ? seriesClass
+            : "series-other";
+
+        var link = document.createElement("a");
+        link.className = "event-card series-colored " + allowed;
+        link.href = ev.link || "#";
+        if (ev.link) {
+          link.target = "_blank";
+          link.rel = "noreferrer noopener";
+        }
+
+        var inner = document.createElement("div");
+        inner.className = "event-inner";
+
+        var titleDiv = document.createElement("div");
+        titleDiv.className = "event-title";
+        var titleText =
+          (ev.title && (ev.title.en || ev.title.pt)) ||
+          ev.title ||
+          "(untitled event)";
+        titleDiv.textContent = titleText;
+
+        var metaRow = document.createElement("div");
+        metaRow.className = "event-meta-row";
+
+        // Main date (congress date first)
+        var dateChip = document.createElement("span");
+        dateChip.className = "event-chip event-date-main";
+        dateChip.textContent = formatEventDateRange(ev);
+        metaRow.appendChild(dateChip);
+
+        // Series/year
+        var seriesChip = document.createElement("span");
+        seriesChip.className = "event-chip";
+        seriesChip.innerHTML =
+          '<span class="event-chip-label">' +
+          (ev.series || "Other").toUpperCase() +
+          " · " +
+          (ev.year || "") +
+          "</span>";
+        metaRow.appendChild(seriesChip);
+
+        // Type chip
+        if (ev.type) {
+          var label;
+          var t = ev.type.toLowerCase();
+          if (t === "congress" || t === "main_congress" || t === "main")
+            label = "Congress";
+          else if (t.indexOf("deadline") !== -1)
+            label = "Deadline";
+          else if (t.indexOf("course") !== -1)
+            label = "Course";
+          else if (t.indexOf("workshop") !== -1)
+            label = "Workshop";
+          else label = ev.type;
+
+          var typeChip = document.createElement("span");
+          typeChip.className = "event-chip";
+          typeChip.innerHTML =
+            '<span class="event-chip-badge">' + label + "</span>";
+          metaRow.appendChild(typeChip);
+        }
+
+        // Location chip
+        if (ev.location) {
+          var locChip = document.createElement("span");
+          locChip.className = "event-chip";
+          locChip.innerHTML =
+            '<span class="event-chip-label">📍 ' +
+            ev.location +
+            "</span>";
+          metaRow.appendChild(locChip);
+        }
+
+        inner.appendChild(titleDiv);
+        inner.appendChild(metaRow);
+        link.appendChild(inner);
+        listEl.appendChild(link);
+      });
+    }
+
+    // --- Init ---
+
+    document.addEventListener("DOMContentLoaded", function () {
+      fetch("events.json", { cache: "no-store" })
+        .then(function (res) {
+          if (!res.ok) throw new Error("Failed to load events.json");
+          return res.json();
+        })
+        .then(function (data) {
+          var events = Array.isArray(data.events) ? data.events : data;
+          var sorted = sortEvents(events);
+          buildFilters(sorted);
+          renderEvents(sorted);
+
+          document
+            .getElementById("yearFilter")
+            .addEventListener("change", function () {
+              renderEvents(sorted);
+            });
+          document
+            .getElementById("seriesFilter")
+            .addEventListener("change", function () {
+              renderEvents(sorted);
+            });
+        })
+        .catch(function (err) {
+          console.error(err);
+          var listEl = document.getElementById("eventsList");
+          var emptyEl = document.getElementById("emptyState");
+          emptyEl.style.display = "block";
+          emptyEl.textContent =
+            "Could not load events. Check if events.json is present in the repository root.";
+          listEl.innerHTML = "";
+        });
+    });
+  </script>
+</body>
+</html>
