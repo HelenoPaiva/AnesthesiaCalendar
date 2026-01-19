@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import html as html_lib
+import json
 import re
 from typing import Any, Dict, List, Tuple
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -35,6 +38,50 @@ def _fetch(url: str) -> str:
     with urlopen(req, timeout=20) as resp:  # nosec - sandboxed in Actions
         raw = resp.read()
     return raw.decode("utf-8", errors="ignore")
+
+
+def _normalize_text(raw_html: str) -> str:
+    unescaped = html_lib.unescape(raw_html)
+    return re.sub(r"\s+", " ", unescaped, flags=re.DOTALL)
+
+
+def _find_key_dates_block(text: str) -> re.Match[str] | None:
+    return re.search(
+        r"Key\s+Dates(.{0,12000})",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+
+def _candidate_key_dates_html(base_url: str) -> List[str]:
+    parsed = urlparse(base_url)
+    root = f"{parsed.scheme}://{parsed.netloc}"
+    candidates: List[str] = []
+
+    for url in (f"{root}/key-dates/", f"{root}/key-dates"):
+        try:
+            candidates.append(_fetch(url))
+        except Exception:
+            continue
+
+    api_urls = [
+        f"{root}/wp-json/wp/v2/pages?slug=programme",
+        f"{root}/wp-json/wp/v2/pages?slug=key-dates",
+        f"{root}/wp-json/wp/v2/pages?search=key%20dates",
+    ]
+    for api_url in api_urls:
+        try:
+            data = json.loads(_fetch(api_url))
+        except Exception:
+            continue
+
+        if isinstance(data, list):
+            for page in data:
+                content = page.get("content", {}).get("rendered")
+                if content:
+                    candidates.append(content)
+
+    return candidates
 
 
 def _ymd(y: int, m: int, d: int) -> str:
@@ -69,7 +116,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         return [], [f"[WCA] Failed to fetch {base_url}: {e}"]
 
     # Flatten whitespace to make regexes simpler
-    text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
+    text = _normalize_text(html)
 
     # ------------------------------------------------------------------
     # Locate the "Key Dates" block.
@@ -81,13 +128,17 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     #   Start at "Key Dates" and grab up to the next ~3000 chars.
     #   This is enough to cover all the <p> lines even if footer/surroundings change.
     # ------------------------------------------------------------------
-    m_block = re.search(
-        r"Key Dates(.{0,3000})",
-        text,
-        flags=re.IGNORECASE,
-    )
+    m_block = _find_key_dates_block(text)
     if not m_block:
-        warnings.append("[WCA] Could not locate 'Key Dates' block on wcacongress.org.")
+        for candidate_html in _candidate_key_dates_html(base_url):
+            text = _normalize_text(candidate_html)
+            m_block = _find_key_dates_block(text)
+            if m_block:
+                break
+    if not m_block:
+        warnings.append(
+            "[WCA] Could not locate 'Key Dates' block on wcacongress.org (including fallbacks)."
+        )
         return [], warnings
 
     block = m_block.group(1)
