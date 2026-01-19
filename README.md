@@ -94,7 +94,8 @@ The goal is a **reliable, always-current reference**, not a productivity platfor
 ## Author
 
 Developed and maintained by  
-**Heleno Paiva, MD**  
+**Heleno de Paiva Oliveira, MD, PhD**  
 Anesthesiologist
+Universidade Federal do Rio Grande do Norte
 
 Contributions, suggestions, and issue reports are welcome via GitHub.
