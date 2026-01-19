@@ -1,68 +1,100 @@
 # Anesthesia Congress Calendar
 
-A lightweight, fully automated calendar of upcoming anesthesiology congresses and deadlines, built for anesthesiologists.
+A lightweight, auto-updated calendar of major anesthesia congresses and deadlines.
 
-The project continuously tracks major national and international anesthesia meetings (e.g. ASA, CBA, WCA, Euroanaesthesia, LASRA) and displays:
-
-- Upcoming congress dates  
-- Abstract submission windows and key deadlines  
-- What is happening *today*  
-- Chronologically ordered upcoming events  
-
-The site updates automatically via GitHub Actions and requires **no manual data entry**.
+Live at:  
+https://helenopaiva.github.io/AnesthesiaCalendar/
 
 ---
 
-## 🌐 Live version
+## What this is
 
-👉 **https://helenopaiva.github.io/AnesthesiaCalendar/**  
+The **Anesthesia Congress Calendar** aggregates official dates from major international and regional anesthesia congresses and presents them in a simple, fast, mobile-friendly dashboard.
 
----
+It focuses on what matters most to anesthesiologists:
 
-## ✨ Key features
+- Upcoming **congress dates**
+- Upcoming **abstract and registration deadlines**
+- Clear prioritization of what comes next
+- Minimal UI, no logins, no tracking
 
-- **Fully automated scraping**  
-  All data is obtained from official congress websites. If an event is not visible at the source, it is not shown.
-
-- **Multi-year aware**  
-  Future congresses (2027, 2028, …) appear automatically as soon as they are published by the organizers.
-
-- **No tombstones / no stale data**  
-  Events that disappear from the source disappear from the calendar.
-
-- **Language toggle**  
-  English (default) ↔ Portuguese UI switch.
-
-- **Timezone-safe**  
-  Dates are interpreted in the user’s local system timezone.
-
-- **Reminder-friendly**  
-  Each future event can generate a calendar reminder (ICS), without accounts or email collection.
-
-- **Static & fast**  
-  Runs entirely on GitHub Pages — no backend, no database, no cookies.
+All data is **scraped automatically from official congress websites** and refreshed hourly.
 
 ---
 
-## 🛠 How it works
+## Currently covered congresses
 
-1. **GitHub Actions** runs scheduled crawlers (hourly).
-2. Scrapers fetch and parse official congress pages.
-3. A snapshot of currently detected events is written to `data/events.json`.
-4. The frontend reads this file and renders the calendar.
+The calendar currently tracks:
 
-There is no long-term persistence of removed events — the site always reflects the current state of the sources.
+- **ASA** — American Society of Anesthesiologists Annual Meeting  
+- **Euroanaesthesia (ESAIC)** — European Society of Anaesthesiology and Intensive Care  
+- **WCA** — World Congress of Anaesthesiologists (WFSA)  
+- **COPA (SAESP)** — Paulista Congress of Anesthesiology  
 
----
+Each congress is handled independently and displayed consistently.
 
-## 🚧 Project status
-
-- ASA: fully automated (congress + submission deadlines)
-- Other societies: scrapers in progress
-- UI/UX: MVP complete, visual polish ongoing
+Only the **next upcoming edition** of each congress is shown, even if future editions already exist online.
 
 ---
 
-## 📄 License
+## How the calendar works
 
-MIT License.
+### Data collection
+- Dedicated scrapers fetch dates directly from official congress websites.
+- Scrapers are **year-agnostic** and adapt as new editions go live.
+- No manual data entry.
+
+### Update frequency
+- Calendar data is refreshed **once per hour** via GitHub Actions.
+- The UI always shows when the data was last updated.
+
+### Display logic
+- **Congresses** are shown first (most important).
+- **Deadlines** are shown separately.
+- On mobile:
+  - Congresses appear first
+  - Deadlines appear below
+- Color coding is consistent per congress series.
+
+---
+
+## User interface features
+
+- Language toggle: **English / Portuguese**
+- Clean, responsive layout
+- Entire event cards are clickable
+- Clear date ranges and relative time (“in 42 days”)
+- No ads, no cookies, no analytics
+
+---
+
+## Source & transparency
+
+This project is fully open-source.
+
+GitHub repository:  
+https://github.com/HelenoPaiva/AnesthesiaCalendar
+
+All scraping logic, update workflows, and frontend code are public and auditable.
+
+---
+
+## Scope and philosophy
+
+This project intentionally avoids:
+- Accounts or user tracking
+- Notifications or emails
+- Overly complex filtering
+- Manual curation
+
+The goal is a **reliable, always-current reference**, not a productivity platform.
+
+---
+
+## Author
+
+Developed and maintained by  
+**Heleno Paiva, MD**  
+Anesthesiologist
+
+Contributions, suggestions, and issue reports are welcome via GitHub.
