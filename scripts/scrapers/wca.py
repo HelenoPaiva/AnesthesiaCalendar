@@ -52,14 +52,14 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     warnings: List[str] = []
     urls = cfg.get("urls") or []
     if not urls:
-        return [], ["[WCA v3] No URLs configured in sources.json."]
+        return [], ["[WCA] No URLs configured in sources.json. (v2026-01-18a)"]
 
     base_url = urls[0]
 
     try:
         html = _fetch(base_url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[WCA v3] Failed to fetch {base_url}: {e}"]
+        return [], [f"[WCA] Failed to fetch {base_url}: {e} (v2026-01-18a)"]
 
     # Flatten all whitespace so patterns can span tags/newlines safely
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
@@ -67,7 +67,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     # ------------------------------------------------------------------
     # Locate the "Key Dates" block.
     #
-    # Instead of a tricky regex, we:
+    # Instead of a brittle regex, we:
     #   - find the index of "Key Dates" (case-insensitive),
     #   - take the next N characters as the block.
     # ------------------------------------------------------------------
@@ -76,7 +76,10 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     idx = lower.find(anchor)
 
     if idx == -1:
-        warnings.append("[WCA v3] 'Key Dates' string not found anywhere in HTML.")
+        warnings.append(
+            "[WCA] Could not locate 'Key Dates' block on wcacongress.org. (v2026-01-18a)"
+        )
+        warnings.append(f"[WCA DEBUG] html_length={len(text)} (v2026-01-18a)")
         return [], warnings
 
     # Take 3000 characters after "Key Dates" as the working block.
@@ -106,7 +109,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         mnum = MONTHS_EN.get(month_name)
         if mnum is None:
-            warnings.append(f"[WCA v3] Unknown month in congress date: '{month_name}'")
+            warnings.append(f"[WCA] Unknown month in congress date: '{month_name}' (v2026-01-18a)")
         else:
             congress_year = year
             start_date = _ymd(year, mnum, d1)
@@ -136,7 +139,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             )
     else:
         warnings.append(
-            "[WCA v3] Could not find a 'dd-dd Month YYYY … Congress' line in Key Dates block."
+            "[WCA] Could not find a 'dd-dd Month YYYY … Congress' line in Key Dates block. (v2026-01-18a)"
         )
 
     # ------------------------------------------------------------------
@@ -177,7 +180,6 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 "Prazo de inscrição regular",
             )
 
-        # Future-proof generic registration deadline
         if "registration" in l and "deadline" in l:
             return (
                 "registration_deadline",
@@ -195,7 +197,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         month = MONTHS_EN.get(month_name)
         if not month:
-            warnings.append(f"[WCA v3] Unknown month in key date: '{month_name}'")
+            warnings.append(f"[WCA] Unknown month in key date: '{month_name}' (v2026-01-18a)")
             continue
 
         date_ymd = _ymd(year, month, day)
@@ -229,6 +231,9 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
 
     if not events:
-        warnings.append("[WCA v3] No events produced from Key Dates block.")
+        warnings.append("[WCA] No events produced from Key Dates block. (v2026-01-18a)")
+
+    # Always add a debug marker so we know this version ran at all
+    warnings.append("[WCA DEBUG] scraper version v2026-01-18a")
 
     return events, warnings
