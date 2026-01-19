@@ -5,8 +5,13 @@
 // - No location chips anywhere
 // + Congress dedup: only the next upcoming congress per series
 // + WCA handling: WCA / World Congress of Anaesthesiologists forced as congress, with own series class
+//
+// FIX (2026-01-19):
+// - Classify DEADLINES BEFORE congress detection.
+//   This prevents WCA (and any other series with "congressy" names) deadlines
+//   from being misclassified as congresses and then lost due to congress dedup.
 
-const APP_VERSION = "2026-01-18 operational-simplified-chips-dedup-wca-1";
+const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-2";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -131,12 +136,7 @@ function relativeDayLabel(i18n, lang, dateStr, todayStr) {
 
   if (diff === 0) return ui(i18n, "today", lang, lang === "pt" ? "Hoje" : "Today");
 
-  const tpl = ui(
-    i18n,
-    "in_days",
-    lang,
-    lang === "pt" ? "em {n} dias" : "in {n} days"
-  );
+  const tpl = ui(i18n, "in_days", lang, lang === "pt" ? "em {n} dias" : "in {n} days");
 
   if (diff > 0) return tpl.replace("{n}", diff);
   return tpl.replace("{n}", `-${Math.abs(diff)}`);
@@ -154,7 +154,9 @@ function formatTimeAgo(date, lang) {
 
   const min = Math.round(sec / 60);
   if (min < 60)
-    return min === 1 ? t("1 minute ago", "há 1 minuto") : t(`${min} minutes ago`, `há ${min} minutos`);
+    return min === 1
+      ? t("1 minute ago", "há 1 minuto")
+      : t(`${min} minutes ago`, `há ${min} minutos`);
 
   const h = Math.round(min / 60);
   if (h < 24)
@@ -175,19 +177,17 @@ function isDeadline(ev) {
 function isCongress(ev) {
   const type = (ev.type || "").toLowerCase();
   const series = (ev.series || "").toLowerCase();
-  const title =
-    (ev.title && (ev.title.en || ev.title.pt)) ||
-    ev.title ||
-    "";
+  const title = (ev.title && (ev.title.en || ev.title.pt)) || ev.title || "";
   const titleLower = String(title).toLowerCase();
 
   // Basic type-based detection
   if (CONGRESS_TYPES.some((t) => type.includes(t))) return true;
 
-  // WCA / World Congress of Anaesthesiologists / WFSA patterns
+  // WCA / World Congress of Anaesthesiologists / WFSA patterns (for congresses)
+  // NOTE: deadlines must be caught by isDeadline FIRST (see classifyEvents).
   if (series.includes("wca")) return true;
   if (series.includes("world congress")) return true;
-  if (series.includes("wfs a") || series.includes("wfsa")) return true;
+  if (series.includes("wfsa")) return true;
 
   if (titleLower.includes("world congress")) return true;
   if (titleLower.includes("wca")) return true;
@@ -208,8 +208,9 @@ function classifyEvents(events) {
   let congresses = [];
 
   upcoming.forEach((ev) => {
-    if (isCongress(ev)) congresses.push(ev);
-    else if (isDeadline(ev)) deadlines.push(ev);
+    // ✅ FIX: Deadlines first, always.
+    if (isDeadline(ev)) deadlines.push(ev);
+    else if (isCongress(ev)) congresses.push(ev);
     else deadlines.push(ev); // fallback: anything non-congress goes to deadlines
   });
 
@@ -258,8 +259,7 @@ function seriesToCssClass(series) {
 
   // WCA / WFSA variants
   if (key === "wca") return "series-wca";
-  if (key.includes("world congress") && key.includes("anaesth"))
-    return "series-wca";
+  if (key.includes("world congress") && key.includes("anaesth")) return "series-wca";
   if (key.includes("wfsa")) return "series-wca";
 
   // Fallback slug
@@ -506,21 +506,20 @@ function applyStaticTexts() {
   const dlCount = document.querySelector("[data-next-deadlines-count]");
   if (dlCount)
     dlCount.textContent =
-      lang === "pt" ? `${appState.deadlines.length} item(ns)` : `${appState.deadlines.length} item(s)`;
+      lang === "pt"
+        ? `${appState.deadlines.length} item(ns)`
+        : `${appState.deadlines.length} item(s)`;
 
   const cgCount = document.querySelector("[data-upcoming-congresses-count]");
   if (cgCount)
     cgCount.textContent =
-      lang === "pt" ? `${appState.congresses.length} item(ns)` : `${appState.congresses.length} item(s)`;
+      lang === "pt"
+        ? `${appState.congresses.length} item(ns)`
+        : `${appState.congresses.length} item(s)`;
 
   const lastUpdatedEl = document.querySelector("[data-last-updated]");
   if (lastUpdatedEl) {
-    const label = ui(
-      i18n,
-      "last_updated",
-      lang,
-      lang === "pt" ? "Atualizado" : "Last updated"
-    );
+    const label = ui(i18n, "last_updated", lang, lang === "pt" ? "Atualizado" : "Last updated");
     let dt = null;
     if (data?.generated_at) {
       const parsed = new Date(data.generated_at);
