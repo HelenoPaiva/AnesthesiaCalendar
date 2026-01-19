@@ -22,7 +22,7 @@ MONTHS_EN = {
     "december": 12,
 }
 
-VERSION = "v2026-01-18e"
+VERSION = "v2026-01-18f"
 
 
 def _fetch(url: str) -> str:
@@ -47,13 +47,19 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Scrape WCA key dates from wcacongress.org (Programme page).
 
-    Extremely tolerant approach:
+    Strategy:
 
       1) Strip all HTML tags -> plain text.
-      2) On the full text:
-         - Congress: first "dd .. dd Month YYYY" range.
-         - Deadlines: "dd Month YYYY – label".
-      3) If parsing still fails, include candidate snippets in warnings.
+      2) Congress:
+         - Find the first "dd .. dd Month YYYY" range (tolerant).
+      3) Deadlines:
+         - Find ALL single dates "dd Month YYYY".
+         - For each, take the text from the end of that match up to the
+           next date as the label.
+         - Map the label to one of:
+             * abstract_deadline
+             * early_bird_deadline
+             * registration_deadline
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
@@ -77,11 +83,10 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     events: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------
-    # Congress: tolerate any non-digit / punctuation between day numbers
-    # Example targets:
+    # Congress range (tolerant):
     #   "15-19 April 2026 – Congress"
     #   "15 – 19 April 2026 – Congress"
-    # We DO NOT require the word "Congress" anymore.
+    # We allow a small block of non-alnum between the two day numbers.
     # ------------------------------------------------------------------
     cong_pattern = re.compile(
         r"(\d{1,2})\s*[^0-9A-Za-z]{1,3}\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})",
@@ -135,17 +140,20 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
 
     # ------------------------------------------------------------------
-    # Deadlines: "dd Month YYYY – label"
-    # Very tolerant: we only assume that the next date or end-of-text
-    # marks the end of the label.
+    # Deadlines:
+    #   "30 September 2025 – Abstract Submission Deadline"
+    #   "21 January 2026 – Early Bird Registration Deadline"
+    #   "31 March 2026 – Regular Registration Deadline"
+    #
+    # We:
+    #   - find all single-date patterns "dd Month YYYY"
+    #   - treat the following text up to the next date as the label
     # ------------------------------------------------------------------
-    deadline_pattern = re.compile(
-        r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*([^0-9]+?)(?=("
-        r"\d{1,2}\s+[A-Za-z]+\s+20\d{2}\s*[–\-]|"
-        r"\d{1,2}\s*[^0-9A-Za-z]{1,3}\s*\d{1,2}\s+[A-Za-z]+\s+20\d{2}|$"
-        r"))",
-        re.IGNORECASE,
+    single_date_pattern = re.compile(
+        r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})", re.IGNORECASE
     )
+
+    single_matches = list(single_date_pattern.finditer(text))
 
     def _map_label(label: str) -> Tuple[str | None, str | None, str | None]:
         l = re.sub(r"\s+", " ", label).strip().lower()
@@ -180,13 +188,18 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         return None, None, None
 
-    deadline_matches = list(deadline_pattern.finditer(text))
+    deadline_events = 0
+    debug_labels: List[str] = []
 
-    for m in deadline_matches:
+    for i, m in enumerate(single_matches):
         day = int(m.group(1))
         month_name = m.group(2).lower()
         year = int(m.group(3))
-        label_raw = m.group(4).strip()
+
+        # We don't want the congress range here, so we skip if this exact
+        # position overlaps the congress match.
+        if m_cong and m.start() >= m_cong.start() and m.start() <= m_cong.end():
+            continue
 
         month = MONTHS_EN.get(month_name)
         if not month:
@@ -195,12 +208,23 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             )
             continue
 
-        date_ymd = _ymd(year, month, day)
-        etype, title_en_tail, title_pt_tail = _map_label(label_raw)
+        # Label: from end of this date match to start of next date (or end of text)
+        start_label = m.end()
+        end_label = (
+            single_matches[i + 1].start() if i + 1 < len(single_matches) else len(text)
+        )
+        raw_segment = text[start_label:end_label].strip()
+
+        # Strip a leading dash/en dash and surrounding spaces
+        raw_segment = re.sub(r"^[\s–\-]+", "", raw_segment).strip()
+
+        debug_labels.append(raw_segment[:120])
+
+        etype, title_en_tail, title_pt_tail = _map_label(raw_segment)
         if not etype:
-            # Unknown label — we don't guess.
             continue
 
+        date_ymd = _ymd(year, month, day)
         year_for_event = congress_year or year
 
         events.append(
@@ -218,36 +242,24 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 },
                 "evidence": {
                     "url": base_url,
-                    "snippet": m.group(0),
-                    "field": "deadline_line_tolerant",
+                    "snippet": m.group(0) + " – " + raw_segment,
+                    "field": "deadline_line_sliced",
                 },
                 "source": "scraped",
             }
         )
+        deadline_events += 1
 
-    # ------------------------------------------------------------------
-    # Debug information if still nothing matched
-    # ------------------------------------------------------------------
     if not events:
-        # Show a few candidate date snippets so we can see what the bot sees.
-        range_candidates = re.findall(
-            r"\d{1,2}[^0-9]{1,3}\d{1,2}\s+[A-Za-z]+\s+20\d{2}", text
-        )[:3]
-        single_candidates = re.findall(
-            r"\d{1,2}\s+[A-Za-z]+\s+20\d{2}", text
-        )[:5]
-
-        warnings.append(
-            f"[WCA] No events produced from page. Candidate ranges: {range_candidates} ({VERSION})"
-        )
-        warnings.append(
-            f"[WCA] Candidate single dates: {single_candidates} ({VERSION})"
-        )
+        warnings.append(f"[WCA] No events produced from page. ({VERSION})")
 
     warnings.append(f"[WCA DEBUG] scraper version {VERSION}")
     warnings.append(
-        f"[WCA DEBUG] deadline_matches={len(deadline_matches)} "
-        f"congress_found={bool(m_cong)}"
+        f"[WCA DEBUG] singles={len(single_matches)} deadline_events={deadline_events} congress_found={bool(m_cong)}"
     )
+    if debug_labels:
+        warnings.append(
+            f"[WCA DEBUG] sample_labels={debug_labels[:3]} ({VERSION})"
+        )
 
     return events, warnings
