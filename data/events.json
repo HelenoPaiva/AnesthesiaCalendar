@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-19T14:17:15+00:00",
+  "generated_at": "2026-01-19T14:20:09+00:00",
   "events": [
     {
       "series": "ASA",
@@ -204,35 +204,163 @@
     },
     {
       "series": "EUROANAESTHESIA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-06-06",
-      "end_date": "2026-06-08",
-      "location": "Rotterdam, The Netherlands",
-      "link": "https://euroanaesthesia.org/2026/",
-      "priority": 8,
+      "year": 2024,
+      "type": "abstract_open",
+      "date": "2024-11-01",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
       "title": {
-        "en": "Euroanaesthesia 2026 — ESAIC Annual Congress",
-        "pt": "Euroanaesthesia 2026 — Congresso anual da ESAIC"
+        "en": "Euroanaesthesia 2024 — Abstract submission opens",
+        "pt": "Euroanaesthesia 2024 — Abertura de submissão de resumos"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Abstract submission opens — 01 November 2024",
+        "field": "important_dates_timeline"
       },
       "source": "scraped",
-      "id": "euroanaesthesia-2026-congress-b31acb0f7c"
+      "id": "euroanaesthesia-2024-abstract_open-0767f92178"
     },
     {
       "series": "EUROANAESTHESIA",
-      "year": 2027,
-      "type": "congress",
-      "start_date": "2027-05-29",
-      "end_date": "2027-05-31",
-      "location": "Rotterdam, The Netherlands",
-      "link": "https://euroanaesthesia.org/2027/",
-      "priority": 8,
+      "year": 2024,
+      "type": "other_deadline",
+      "date": "2024-11-28",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
       "title": {
-        "en": "Euroanaesthesia 2027 — ESAIC Annual Congress",
-        "pt": "Euroanaesthesia 2027 — Congresso anual da ESAIC"
+        "en": "Euroanaesthesia 2024 — Early registration opens",
+        "pt": "Euroanaesthesia 2024 — Abertura de inscrição early"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Early registration opens (Physical congress) — 28 November 2024",
+        "field": "important_dates_timeline"
       },
       "source": "scraped",
-      "id": "euroanaesthesia-2027-congress-e229c6c727"
+      "id": "euroanaesthesia-2024-other_deadline-00f21e2afa"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2024,
+      "type": "abstract_deadline",
+      "date": "2024-12-05",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2024 — Abstract submission deadline",
+        "pt": "Euroanaesthesia 2024 — Prazo final de submissão de resumos"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Abstract submission closes — 05 December 2024",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2024-abstract_deadline-1765ff5a61"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2025,
+      "type": "early_bird_deadline",
+      "date": "2025-02-26",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2025 — Early registration deadline",
+        "pt": "Euroanaesthesia 2025 — Prazo de inscrição early-bird"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Early registration closes (Physical congress) — 26 February 2025",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2025-early_bird_deadline-68dab4ab43"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2025,
+      "type": "other_deadline",
+      "date": "2025-02-27",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2025 — Late registration opens",
+        "pt": "Euroanaesthesia 2025 — Abertura de inscrição tardia"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Late registration opens (Physical congress) — 27 February 2025",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2025-other_deadline-fabbb6b536"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2025,
+      "type": "abstract_deadline",
+      "date": "2025-03-27",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2025 — Abstract submission deadline",
+        "pt": "Euroanaesthesia 2025 — Prazo final de submissão de resumos"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Abstract presenter registration closes — 27 March 2025",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2025-abstract_deadline-e8e9ffe097"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2025,
+      "type": "registration_deadline",
+      "date": "2025-05-20",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2025 — Late registration deadline",
+        "pt": "Euroanaesthesia 2025 — Prazo de inscrição tardia"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Late registration closes (Physical congress) — 20 May 2025",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2025-registration_deadline-88e9b97226"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2025,
+      "type": "registration_deadline",
+      "date": "2025-05-27",
+      "location": "—",
+      "link": "https://euroanaesthesia.org/",
+      "priority": 7,
+      "title": {
+        "en": "Euroanaesthesia 2025 — Registration deadline",
+        "pt": "Euroanaesthesia 2025 — Prazo final de inscrição"
+      },
+      "evidence": {
+        "url": "https://euroanaesthesia.org/",
+        "snippet": "Registration closes (Virtual congress) — 27 May 2025",
+        "field": "important_dates_timeline"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2025-registration_deadline-bc5ba211aa"
     },
     {
       "series": "WCA",
