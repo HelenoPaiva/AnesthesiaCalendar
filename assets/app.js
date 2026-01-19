@@ -1,8 +1,10 @@
-// assets/app.js — deadlines + congresses + ICS + language switch
-// + series-based color coding (chips + card glow/shadow)
-// + location chip: always show ev.location if present (including ASA "ASA Annual Meeting")
+// assets/app.js
+// FINAL SIMPLIFIED CHIP LOGIC
+// - Congresses: DATE CHIP ONLY (series color applied)
+// - Deadlines: DATE CHIP + SERIES CHIP ONLY
+// - No location chips anywhere
 
-const APP_VERSION = "2026-01-18 series-colors-chips-3";
+const APP_VERSION = "2026-01-18 simplified-chips-1";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -29,551 +31,251 @@ const appState = {
   lang: "en",
 };
 
+// ------------------ Fetch ------------------
+
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-  const json = await res.json();
-  console.log("[ACC]", APP_VERSION, "Loaded", url, "keys:", Object.keys(json || {}));
-  return json;
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+  return res.json();
 }
 
-// ---------- Language helpers ----------
+// ------------------ Language ------------------
 
-function getStoredLang() {
+function chooseInitialLang() {
   try {
-    const v = localStorage.getItem("acc_lang");
-    if (v === "en" || v === "pt") return v;
-  } catch (e) {}
-  return null;
-}
-
-function chooseInitialLang(i18n) {
-  const params = new URLSearchParams(window.location.search);
-  const paramLang = params.get("lang");
-  if (paramLang === "pt" || paramLang === "en") return paramLang;
-
-  const stored = getStoredLang();
-  if (stored) return stored;
-
-  const nav = navigator.language || navigator.userLanguage || "en";
-  if (nav.toLowerCase().startsWith("pt")) return "pt";
-  return "en";
+    const stored = localStorage.getItem("acc_lang");
+    if (stored === "en" || stored === "pt") return stored;
+  } catch {}
+  return navigator.language?.startsWith("pt") ? "pt" : "en";
 }
 
 function ui(i18n, key, lang, fallback) {
-  const uiRoot = i18n && i18n.ui ? i18n.ui : {};
-  const entry = uiRoot[key];
-  if (!entry) return fallback || key;
-  return entry[lang] || entry.en || fallback || key;
+  return i18n?.ui?.[key]?.[lang] || i18n?.ui?.[key]?.en || fallback || key;
 }
 
-// ---------- Date helpers ----------
+// ------------------ Dates ------------------
 
-function formatISODate(dateStr) {
-  if (!dateStr) return "";
-  const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
-  if (!y || !m || !d) return dateStr;
-  const dt = new Date(y, m - 1, d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+function formatISODate(d) {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return `${String(dt.getDate()).padStart(2, "0")}/${String(
+    dt.getMonth() + 1
+  ).padStart(2, "0")}/${dt.getFullYear()}`;
 }
 
-function getEventStartISO(ev) {
+function getStart(ev) {
   return ev.date || ev.start_date || null;
 }
-function getEventEndISO(ev) {
+function getEnd(ev) {
   return ev.end_date || ev.date || ev.start_date || null;
 }
 
-function formatTimeAgo(date, lang) {
-  const now = new Date();
-  const diffMs = now - date;
-  const sec = Math.round(diffMs / 1000);
-  const t = (en, pt) => (lang === "pt" ? pt : en);
-
-  if (sec < 45) return t("just now", "agora mesmo");
-
-  const min = Math.round(sec / 60);
-  if (min < 60) {
-    if (min === 1) return t("1 minute ago", "há 1 minuto");
-    return t(`${min} minutes ago`, `há ${min} minutos`);
-  }
-
-  const h = Math.round(min / 60);
-  if (h < 24) {
-    if (h === 1) return t("1 hour ago", "há 1 hora");
-    return t(`${h} hours ago`, `há ${h} horas`);
-  }
-
-  const d = Math.round(h / 24);
-  if (d === 1) return t("1 day ago", "há 1 dia");
-  return t(`${d} days ago`, `há ${d} dias`);
-}
-
-function relativeDayLabel(i18n, lang, dateStr, todayStr) {
-  if (!dateStr) return "";
+function relativeLabel(dateStr, lang) {
+  const today = new Date();
   const d = new Date(dateStr);
-  const today = new Date(todayStr);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const diff = Math.round((d - today) / msPerDay);
+  const diff = Math.round((d - today) / (24 * 60 * 60 * 1000));
 
-  if (diff === 0) return ui(i18n, "today", lang, lang === "pt" ? "Hoje" : "Today");
-
-  const tpl = ui(i18n, "in_days", lang, lang === "pt" ? "em {n} dias" : "in {n} days");
-  if (diff > 0) return tpl.replace("{n}", diff);
-  return tpl.replace("{n}", `-${Math.abs(diff)}`);
+  if (diff === 0) return lang === "pt" ? "hoje" : "today";
+  if (diff > 0)
+    return lang === "pt" ? `em ${diff} dias` : `in ${diff} days`;
+  return lang === "pt"
+    ? `há ${Math.abs(diff)} dias`
+    : `${Math.abs(diff)} days ago`;
 }
 
-// ---------- Classification ----------
+// ------------------ Classification ------------------
 
 function isDeadline(ev) {
-  const type = (ev.type || "").toLowerCase();
-  const titleStr = (ev.title && (ev.title.en || ev.title.pt)) || ev.title || "";
-  const isDeadlineType = DEADLINE_TYPES.some((t) => type.includes(t));
-  const looksDeadlineTitle = /deadline|submissions?|abstracts?/i.test(titleStr);
-  return isDeadlineType || looksDeadlineTitle;
+  return DEADLINE_TYPES.some((t) => (ev.type || "").includes(t));
 }
 
 function isCongress(ev) {
-  const type = (ev.type || "").toLowerCase();
-  const titleStr = (ev.title && (ev.title.en || ev.title.pt)) || ev.title || "";
-  const isCongressType = CONGRESS_TYPES.some((t) => type.includes(t));
-  const looksCongressTitle = /congress|annual meeting|meeting/i.test(titleStr);
-  return isCongressType || looksCongressTitle;
+  return CONGRESS_TYPES.some((t) => (ev.type || "").includes(t));
 }
 
-function classifyEvents(events, todayStr) {
-  const safe = Array.isArray(events) ? events : [];
+function classifyEvents(events) {
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  const upcoming = safe.filter((ev) => {
-    const startIso = getEventStartISO(ev);
-    return startIso && startIso >= todayStr;
+  const upcoming = events.filter((ev) => {
+    const s = getStart(ev);
+    return s && s >= todayStr;
   });
 
   const deadlines = [];
   const congresses = [];
 
   upcoming.forEach((ev) => {
-    if (isDeadline(ev)) {
-      deadlines.push(ev);
-      return;
-    }
-    if (isCongress(ev)) {
-      congresses.push(ev);
-      return;
-    }
-    if (ev.series && ev.year) congresses.push(ev);
+    if (isCongress(ev)) congresses.push(ev);
     else deadlines.push(ev);
   });
 
-  const sortByStartPriority = (a, b) => {
-    const da = getEventStartISO(a) || "";
-    const db = getEventStartISO(b) || "";
-    if (da !== db) return da.localeCompare(db);
-    const pa = typeof a.priority === "number" ? a.priority : 0;
-    const pb = typeof b.priority === "number" ? b.priority : 0;
-    return pb - pa;
-  };
+  const sortFn = (a, b) =>
+    (getStart(a) || "").localeCompare(getStart(b) || "");
 
-  deadlines.sort(sortByStartPriority);
-  congresses.sort(sortByStartPriority);
-
-  console.log("[ACC]", APP_VERSION, "classified:", {
-    deadlines: deadlines.length,
-    congresses: congresses.length,
-  });
+  deadlines.sort(sortFn);
+  congresses.sort(sortFn);
 
   return { deadlines, congresses };
 }
 
-// ---------- Series color mapping ----------
-
-function normalizeSeriesKey(series) {
-  if (!series) return "";
-  return String(series).trim().toLowerCase();
-}
+// ------------------ Series → CSS class ------------------
 
 function seriesToCssClass(series) {
-  const key = normalizeSeriesKey(series);
-  if (!key) return null;
-
-  const map = {
-    asa: "series-asa",
-    euroanaesthesia: "series-euroanaesthesia",
-    euroanesthesia: "series-euroanaesthesia",
-  };
-
-  if (map[key]) return map[key];
-
-  const slug = key
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-
-  if (!slug) return null;
-  return `series-${slug}`;
+  if (!series) return null;
+  const key = series.toLowerCase();
+  if (key === "asa") return "series-asa";
+  if (key.startsWith("euro")) return "series-euroanaesthesia";
+  return `series-${key.replace(/[^a-z0-9]+/g, "-")}`;
 }
 
-// ---------- Location chip (fixed) ----------
-// Always show ev.location if it exists and is not blank/placeholder.
-// Only fallback to TBA if it is missing or "—".
+// ------------------ Rendering ------------------
 
-function isBlankOrDashLocation(text) {
-  if (!text) return true;
-  const t = String(text).trim();
-  if (!t) return true;
-  if (t === "—" || t === "-" || t.toLowerCase() === "tba") return true;
-  return false;
-}
-
-function getDisplayLocation(ev, lang) {
-  if (!isBlankOrDashLocation(ev.location)) return String(ev.location).trim();
-  return lang === "pt" ? "Local: a confirmar" : "Location: TBA";
-}
-
-function clearContainer(selector) {
-  const el = document.querySelector(selector);
-  if (el) el.innerHTML = "";
-  return el;
-}
-
-function getTitleForEvent(ev, lang) {
-  if (ev.title && (ev.title[lang] || ev.title.en)) return ev.title[lang] || ev.title.en;
-  return ev.title || "(no title)";
-}
-
-// ---------- ICS ----------
-
-function toICSDate(isoDate) {
-  if (!isoDate) return null;
-  const [y, m, d] = isoDate.split("-");
-  if (!y || !m || !d) return null;
-  return `${y}${m}${d}`;
-}
-
-function plusOneDayISO(isoDate) {
-  const dt = new Date(isoDate);
-  if (isNaN(dt.getTime())) return null;
-  dt.setDate(dt.getDate() + 1);
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function buildICS(ev, lang) {
-  const startIso = getEventStartISO(ev);
-  if (!startIso) return null;
-
-  const endIsoRaw = getEventEndISO(ev) || startIso;
-  const endIso = plusOneDayISO(endIsoRaw) || plusOneDayISO(startIso);
-
-  const dtStart = toICSDate(startIso);
-  const dtEnd = toICSDate(endIso);
-
-  const nowIso = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
-  const dtStamp = `${nowIso}Z`;
-
-  const title = getTitleForEvent(ev, lang);
-
-  const descriptionParts = [];
-  if (ev.series) descriptionParts.push(ev.series);
-  if (ev.location) descriptionParts.push(ev.location);
-  if (ev.link) descriptionParts.push(ev.link);
-  const description = descriptionParts.join(" — ");
-
-  const uidBase = ev.id || `${ev.series || "event"}-${startIso}`;
-  const uid = `${uidBase}@anesthesia-congress-calendar`;
-
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//AnesthesiaCongressCalendar//EN",
-    "BEGIN:VEVENT",
-    `UID:${uid}`,
-    `DTSTAMP:${dtStamp}`,
-    `DTSTART;VALUE=DATE:${dtStart}`,
-    `DTEND;VALUE=DATE:${dtEnd}`,
-    `SUMMARY:${title}`,
-    description ? `DESCRIPTION:${description}` : "",
-    ev.link ? `URL:${ev.link}` : "",
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].filter(Boolean);
-
-  return lines.join("\r\n");
-}
-
-function triggerICSDownload(ev, lang) {
-  const ics = buildICS(ev, lang);
-  if (!ics) return;
-
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const safeId = (ev.id || `${ev.series || "event"}-${getEventStartISO(ev) || ""}`)
-    .replace(/[^a-zA-Z0-9-_]/g, "_")
-    .slice(0, 60);
-  const filename = `${safeId || "event"}.ics`;
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ---------- Rendering ----------
-
-function renderEventList(container, events, i18n, lang, kind) {
-  if (!container) return;
+function renderList(container, events, lang, kind) {
   container.innerHTML = "";
 
-  if (!events || events.length === 0) {
-    const emptyKey = kind === "deadlines" ? "no_deadlines" : "no_congresses";
-    const fallback =
-      kind === "deadlines"
-        ? lang === "pt"
-          ? "Nenhum prazo futuro."
-          : "No upcoming deadlines."
-        : lang === "pt"
-          ? "Nenhum congresso futuro."
-          : "No upcoming congresses.";
-    const msg = ui(i18n, emptyKey, lang, fallback);
-
-    const div = document.createElement("div");
-    div.className = "empty-state";
-    div.textContent = msg;
-    container.appendChild(div);
+  if (!events.length) {
+    container.innerHTML = `<div class="empty-state">${
+      lang === "pt" ? "Nenhum item." : "No items."
+    }</div>`;
     return;
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-
   events.forEach((ev) => {
     const card = document.createElement("article");
-    card.className = "event-card";
+    card.className = "event-card series-colored";
 
-    const sClass = seriesToCssClass(ev.series);
-    if (sClass) {
-      card.classList.add("series-colored");
-      card.classList.add(sClass);
+    const sc = seriesToCssClass(ev.series);
+    if (sc) card.classList.add(sc);
+
+    const title = document.createElement("div");
+    title.className = "event-title";
+    title.textContent =
+      ev.title?.[lang] || ev.title?.en || ev.title || "";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "event-meta-row";
+
+    // DATE CHIP (always)
+    const start = getStart(ev);
+    const end = getEnd(ev);
+
+    if (start) {
+      const chip = document.createElement("span");
+      chip.className = "event-chip event-date-main";
+
+      let txt = formatISODate(start);
+      if (end && end !== start)
+        txt += `–${formatISODate(end)}`;
+
+      txt += ` • ${relativeLabel(start, lang)}`;
+      chip.textContent = txt;
+      meta.appendChild(chip);
     }
 
-    const titleEl = document.createElement("div");
-    titleEl.className = "event-title";
-    titleEl.textContent = getTitleForEvent(ev, lang);
-    card.appendChild(titleEl);
-
-    const metaRow = document.createElement("div");
-    metaRow.className = "event-meta-row";
-
-    const startIso = getEventStartISO(ev);
-    const endIso = ev.end_date || null;
-
-    if (startIso) {
-      const dateChip = document.createElement("span");
-      dateChip.className = "event-chip event-date-main";
-
-      let datePart = formatISODate(startIso);
-      if (endIso && endIso !== startIso) {
-        datePart = `${formatISODate(startIso)}–${formatISODate(endIso)}`;
-      }
-
-      const rel = relativeDayLabel(i18n, lang, startIso, todayStr);
-      dateChip.textContent = `${datePart} • ${rel}`;
-      metaRow.appendChild(dateChip);
+    // SERIES CHIP (deadlines only)
+    if (kind === "deadlines" && ev.series) {
+      const s = document.createElement("span");
+      s.className = "event-chip event-series";
+      s.textContent = ev.series;
+      meta.appendChild(s);
     }
 
-    // Location chip (fixed: ASA "ASA Annual Meeting" will display)
-    const displayLoc = getDisplayLocation(ev, lang);
-    if (displayLoc) {
-      const locChip = document.createElement("span");
-      locChip.className = "event-chip";
-      locChip.textContent = displayLoc;
-      metaRow.appendChild(locChip);
-    }
-
-    if (ev.series) {
-      const seriesChip = document.createElement("span");
-      seriesChip.className = "event-chip event-series";
-      seriesChip.textContent = ev.series;
-      metaRow.appendChild(seriesChip);
-    }
-
-    card.appendChild(metaRow);
+    card.appendChild(meta);
 
     if (ev.link) {
-      const linkRow = document.createElement("div");
-      linkRow.className = "event-link";
+      const row = document.createElement("div");
+      row.className = "event-link";
 
-      const openAnchor = document.createElement("a");
-      openAnchor.href = ev.link;
-      openAnchor.target = "_blank";
-      openAnchor.rel = "noreferrer noopener";
-      openAnchor.textContent = ui(i18n, "open", lang, lang === "pt" ? "Abrir" : "Open");
-      linkRow.appendChild(openAnchor);
+      const a = document.createElement("a");
+      a.href = ev.link;
+      a.target = "_blank";
+      a.textContent = ui(
+        appState.i18n,
+        "open",
+        lang,
+        lang === "pt" ? "Abrir" : "Open"
+      );
+      row.appendChild(a);
 
-      const sep = document.createElement("span");
-      sep.textContent = "·";
-      linkRow.appendChild(sep);
+      const btn = document.createElement("button");
+      btn.className = "event-ics-btn";
+      btn.textContent =
+        lang === "pt"
+          ? "Adicionar ao calendário"
+          : "Save to calendar";
+      btn.onclick = () => triggerICS(ev, lang);
+      row.appendChild(btn);
 
-      const icsBtn = document.createElement("button");
-      icsBtn.type = "button";
-      icsBtn.className = "event-ics-btn";
-      icsBtn.textContent = lang === "pt" ? "Adicionar ao calendário" : "Save to calendar";
-      icsBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerICSDownload(ev, lang);
-      });
-      linkRow.appendChild(icsBtn);
-
-      card.appendChild(linkRow);
+      card.appendChild(row);
     }
 
     container.appendChild(card);
   });
 }
 
-// ---------- Static texts ----------
+// ------------------ ICS ------------------
 
-function applyStaticTexts() {
-  const { i18n, data, lang } = appState;
+function triggerICS(ev, lang) {
+  const s = getStart(ev);
+  if (!s) return;
 
-  const subtitleEl = document.querySelector("[data-subtitle]");
-  if (subtitleEl) {
-    subtitleEl.textContent = ui(
-      i18n,
-      "subtitle",
-      lang,
-      lang === "pt"
-        ? "Prazos e datas de congressos — auto-atualizado."
-        : "Upcoming deadlines and congress dates — auto-updated."
-    );
-  }
+  const e = getEnd(ev) || s;
 
-  const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
-  if (deadlinesTitleEl) {
-    deadlinesTitleEl.textContent = ui(
-      i18n,
-      "next_deadlines",
-      lang,
-      lang === "pt" ? "Próximos prazos" : "Next deadlines"
-    );
-  }
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    `DTSTART;VALUE=DATE:${s.replace(/-/g, "")}`,
+    `DTEND;VALUE=DATE:${e.replace(/-/g, "")}`,
+    `SUMMARY:${ev.title?.[lang] || ev.title?.en || ev.title}`,
+    ev.link ? `URL:${ev.link}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
 
-  const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
-  if (congressesTitleEl) {
-    congressesTitleEl.textContent = ui(
-      i18n,
-      "upcoming_congresses",
-      lang,
-      lang === "pt" ? "Próximos congressos" : "Upcoming congresses"
-    );
-  }
-
-  const lastUpdatedEl = document.querySelector("[data-last-updated]");
-  if (lastUpdatedEl) {
-    const label = ui(i18n, "last_updated", lang, lang === "pt" ? "Atualizado" : "Last updated");
-    let dt = null;
-    if (data && data.generated_at) {
-      const parsed = new Date(data.generated_at);
-      if (!isNaN(parsed.getTime())) dt = parsed;
-    }
-    if (!dt) dt = new Date();
-    lastUpdatedEl.textContent = `${label}: ${formatTimeAgo(dt, lang)}`;
-  }
-
-  const dlCount = document.querySelector("[data-next-deadlines-count]");
-  if (dlCount) dlCount.textContent = (lang === "pt" ? `${appState.deadlines.length} item(ns)` : `${appState.deadlines.length} item(s)`);
-
-  const cgCount = document.querySelector("[data-upcoming-congresses-count]");
-  if (cgCount) cgCount.textContent = (lang === "pt" ? `${appState.congresses.length} item(ns)` : `${appState.congresses.length} item(s)`);
-
-  const verEl = document.querySelector("[data-app-version]");
-  if (verEl) verEl.textContent = `app: ${APP_VERSION}`;
+  const blob = new Blob([ics], { type: "text/calendar" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${ev.id || "event"}.ics`;
+  a.click();
 }
 
-function renderAll() {
-  applyStaticTexts();
-
-  const deadlinesContainer = clearContainer("[data-next-deadlines]");
-  const congressesContainer = clearContainer("[data-upcoming-congresses]");
-
-  renderEventList(deadlinesContainer, appState.deadlines, appState.i18n, appState.lang, "deadlines");
-  renderEventList(congressesContainer, appState.congresses, appState.i18n, appState.lang, "congresses");
-}
-
-// ---------- Language switcher ----------
-
-function setupLangSwitcher() {
-  const switchEl = document.querySelector("[data-lang-switch]");
-  if (!switchEl) return;
-
-  const buttons = Array.from(switchEl.querySelectorAll("[data-lang-btn]"));
-
-  function updateActive() {
-    buttons.forEach((btn) => {
-      const code = btn.getAttribute("data-lang-btn");
-      if (code === appState.lang) btn.classList.add("lang-btn--active");
-      else btn.classList.remove("lang-btn--active");
-    });
-  }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const code = btn.getAttribute("data-lang-btn");
-      if (code !== "en" && code !== "pt") return;
-      if (code === appState.lang) return;
-
-      appState.lang = code;
-      try { localStorage.setItem("acc_lang", code); } catch (e) {}
-
-      updateActive();
-      renderAll();
-    });
-  });
-
-  updateActive();
-}
-
-// ---------- Main ----------
+// ------------------ Main ------------------
 
 async function main() {
-  try {
-    const [i18n, data] = await Promise.all([fetchJson(I18N_URL), fetchJson(DATA_URL)]);
+  const [i18n, data] = await Promise.all([
+    fetchJson(I18N_URL),
+    fetchJson(DATA_URL),
+  ]);
 
-    if (!Array.isArray(data.events)) {
-      console.error("events.json payload:", data);
-      throw new Error("events.json missing {events: []}");
-    }
+  const { deadlines, congresses } = classifyEvents(data.events);
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const { deadlines, congresses } = classifyEvents(data.events, todayStr);
+  appState.i18n = i18n;
+  appState.data = data;
+  appState.deadlines = deadlines;
+  appState.congresses = congresses;
+  appState.lang = chooseInitialLang();
 
-    appState.i18n = i18n;
-    appState.data = data;
-    appState.deadlines = deadlines;
-    appState.congresses = congresses;
-    appState.lang = chooseInitialLang(i18n);
+  renderList(
+    document.querySelector("[data-next-deadlines]"),
+    deadlines,
+    appState.lang,
+    "deadlines"
+  );
 
-    console.log("[ACC]", APP_VERSION, "lang:", appState.lang);
+  renderList(
+    document.querySelector("[data-upcoming-congresses]"),
+    congresses,
+    appState.lang,
+    "congresses"
+  );
 
-    setupLangSwitcher();
-    renderAll();
-  } catch (err) {
-    console.error("[ACC] Fatal error:", err);
-    const container = document.querySelector("[data-next-deadlines]") || document.body;
-    const div = document.createElement("div");
-    div.className = "empty-state error-state";
-    div.textContent = "Error loading calendar data. Check console logs for details.";
-    container.appendChild(div);
-  }
+  document.querySelector("[data-app-version]").textContent =
+    "app: " + APP_VERSION;
 }
 
 document.addEventListener("DOMContentLoaded", main);
