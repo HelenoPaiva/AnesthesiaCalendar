@@ -22,7 +22,7 @@ MONTHS_EN = {
     "december": 12,
 }
 
-VERSION = "v2026-01-18c"
+VERSION = "v2026-01-18d"
 
 
 def _fetch(url: str) -> str:
@@ -47,15 +47,14 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Scrape WCA key dates from wcacongress.org (Programme page).
 
-    Robust approach:
-      - The page may contain multiple occurrences of "Key Dates" (header/footer).
-      - We scan ALL occurrences, take a window after each, and select the window
-        that yields the most date matches (and preferably a congress range).
-      - If no anchor yields matches, fall back to scanning the whole page.
+    Robust + year-agnostic:
 
-    Year-agnostic:
-      - Reads congress year from "dd-dd Month YYYY … Congress".
-      - Deadlines are associated with that congress year when possible.
+      - Strip HTML tags to get plain text.
+      - Search full text for:
+          * 'dd-dd Month YYYY … Congress'  -> congress range
+          * 'dd Month YYYY – label'        -> deadlines
+
+      - Associate deadlines with congress year when possible.
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
@@ -70,13 +69,17 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     except Exception as e:  # pragma: no cover - network
         return [], [f"[WCA] Failed to fetch {base_url}: {e} ({VERSION})"]
 
-    # Flatten all whitespace so patterns can span tags/newlines safely
-    text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
-    lower = text.lower()
+    # 1) Strip all HTML tags -> we only keep visible text
+    #    e.g. "<strong>15-19 April 2026</strong> – Congress"
+    #    becomes "15-19 April 2026 – Congress"
+    text_no_tags = re.sub(r"<[^>]+>", " ", html)
 
-    anchor = "key dates"
-    window_size = 8000  # larger window so we don't miss the actual list
+    # 2) Collapse whitespace so patterns can span original newlines/spacing
+    text = re.sub(r"\s+", " ", text_no_tags, flags=re.DOTALL).strip()
 
+    # ------------------------------------------------------------------
+    # Patterns
+    # ------------------------------------------------------------------
     # Congress range line: "15-19 April 2026 – Congress"
     cong_pattern = re.compile(
         r"(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})"
@@ -84,7 +87,8 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         re.IGNORECASE,
     )
 
-    # Single-day deadline lines
+    # Single-day deadline lines:
+    #   "30 September 2025 – Abstract Submission Deadline"
     deadline_pattern = re.compile(
         r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*([^0-9]+?)(?=("
         r"\d{1,2}\s+[A-Za-z]+\s+20\d{2}\s*[–\-]|"
@@ -126,45 +130,12 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         return None, None, None
 
-    # ------------------------------------------------------------
-    # Pick the best block near "Key Dates"
-    # ------------------------------------------------------------
-    idxs: List[int] = []
-    start = 0
-    while True:
-        i = lower.find(anchor, start)
-        if i == -1:
-            break
-        idxs.append(i)
-        start = i + len(anchor)
-
-    best_block = ""
-    best_score = -1
-    best_has_congress = False
-
-    for i in idxs:
-        block = text[i : i + window_size]
-        has_congress = cong_pattern.search(block) is not None
-        deadlines = list(deadline_pattern.finditer(block))
-        score = (100 if has_congress else 0) + len(deadlines)
-
-        if score > best_score:
-            best_score = score
-            best_block = block
-            best_has_congress = has_congress
-
-    if best_score <= 0:
-        # No usable anchor window found — fall back to full page scan
-        warnings.append(f"[WCA] 'Key Dates' anchor windows yielded no matches; scanning full page. ({VERSION})")
-        best_block = text
-        best_has_congress = cong_pattern.search(best_block) is not None
-
-    # ------------------------------------------------------------
-    # Now parse from the chosen block
-    # ------------------------------------------------------------
     events: List[Dict[str, Any]] = []
 
-    m_cong = cong_pattern.search(best_block)
+    # ------------------------------------------------------------------
+    # Congress range
+    # ------------------------------------------------------------------
+    m_cong = cong_pattern.search(text)
     congress_year: int | None = None
 
     if m_cong:
@@ -206,7 +177,10 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     else:
         warnings.append(f"[WCA] Could not find a 'dd-dd Month YYYY … Congress' line. ({VERSION})")
 
-    for m in deadline_pattern.finditer(best_block):
+    # ------------------------------------------------------------------
+    # Deadlines
+    # ------------------------------------------------------------------
+    for m in deadline_pattern.finditer(text):
         day = int(m.group(1))
         month_name = m.group(2).lower()
         year = int(m.group(3))
@@ -220,6 +194,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         date_ymd = _ymd(year, month, day)
         etype, title_en_tail, title_pt_tail = _map_label(label_raw)
         if not etype:
+            # Unknown label — skip instead of guessing.
             continue
 
         year_for_event = congress_year or year
@@ -250,6 +225,5 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         warnings.append(f"[WCA] No events produced from page. ({VERSION})")
 
     warnings.append(f"[WCA DEBUG] scraper version {VERSION}")
-    warnings.append(f"[WCA DEBUG] anchors_found={len(idxs)} best_score={best_score} best_has_congress={best_has_congress}")
 
     return events, warnings
