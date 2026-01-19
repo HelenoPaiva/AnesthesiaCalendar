@@ -22,6 +22,8 @@ MONTHS_EN = {
     "december": 12,
 }
 
+VERSION = "v2026-01-18b"
+
 
 def _fetch(url: str) -> str:
     """HTTP GET with a reasonable User-Agent."""
@@ -52,14 +54,17 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     warnings: List[str] = []
     urls = cfg.get("urls") or []
     if not urls:
-        return [], ["[WCA] No URLs configured in sources.json. (v2026-01-18a)"]
+        return [], [f"[WCA] No URLs configured in sources.json. ({VERSION})"]
 
     base_url = urls[0]
+
+    # Location can be overridden in data/sources.json if WCA moves city.
+    location = cfg.get("location", "Marrakech, Morocco")
 
     try:
         html = _fetch(base_url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[WCA] Failed to fetch {base_url}: {e} (v2026-01-18a)"]
+        return [], [f"[WCA] Failed to fetch {base_url}: {e} ({VERSION})"]
 
     # Flatten all whitespace so patterns can span tags/newlines safely
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
@@ -67,23 +72,22 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     # ------------------------------------------------------------------
     # Locate the "Key Dates" block.
     #
-    # Instead of a brittle regex, we:
-    #   - find the index of "Key Dates" (case-insensitive),
-    #   - take the next N characters as the block.
+    # We try to anchor at "Key Dates", but if that fails we fall back
+    # to scanning the whole page instead of returning zero events.
     # ------------------------------------------------------------------
     lower = text.lower()
     anchor = "key dates"
     idx = lower.find(anchor)
 
     if idx == -1:
+        # Anchor not found – CMS change? Fall back to whole HTML.
         warnings.append(
-            "[WCA] Could not locate 'Key Dates' block on wcacongress.org. (v2026-01-18a)"
+            f"[WCA] 'Key Dates' anchor not found; falling back to full page scan. ({VERSION})"
         )
-        warnings.append(f"[WCA DEBUG] html_length={len(text)} (v2026-01-18a)")
-        return [], warnings
-
-    # Take 3000 characters after "Key Dates" as the working block.
-    block = text[idx : idx + 3000]
+        block = text
+    else:
+        # Take 3000 characters after "Key Dates" as the working block.
+        block = text[idx : idx + 3000]
 
     events: List[Dict[str, Any]] = []
 
@@ -109,7 +113,9 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         mnum = MONTHS_EN.get(month_name)
         if mnum is None:
-            warnings.append(f"[WCA] Unknown month in congress date: '{month_name}' (v2026-01-18a)")
+            warnings.append(
+                f"[WCA] Unknown month in congress date: '{month_name}' ({VERSION})"
+            )
         else:
             congress_year = year
             start_date = _ymd(year, mnum, d1)
@@ -122,7 +128,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                     "type": "congress",
                     "start_date": start_date,
                     "end_date": end_date,
-                    "location": "Marrakech, Morocco",
+                    "location": location,
                     "link": base_url,
                     "priority": 9,
                     "title": {
@@ -139,7 +145,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             )
     else:
         warnings.append(
-            "[WCA] Could not find a 'dd-dd Month YYYY … Congress' line in Key Dates block. (v2026-01-18a)"
+            f"[WCA] Could not find a 'dd-dd Month YYYY … Congress' line. ({VERSION})"
         )
 
     # ------------------------------------------------------------------
@@ -197,7 +203,9 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         month = MONTHS_EN.get(month_name)
         if not month:
-            warnings.append(f"[WCA] Unknown month in key date: '{month_name}' (v2026-01-18a)")
+            warnings.append(
+                f"[WCA] Unknown month in key date: '{month_name}' ({VERSION})"
+            )
             continue
 
         date_ymd = _ymd(year, month, day)
@@ -214,7 +222,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 "year": year_for_event,
                 "type": etype,
                 "date": date_ymd,
-                "location": "Marrakech, Morocco",
+                "location": location,
                 "link": base_url,
                 "priority": 8,
                 "title": {
@@ -231,9 +239,9 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
 
     if not events:
-        warnings.append("[WCA] No events produced from Key Dates block. (v2026-01-18a)")
+        warnings.append(f"[WCA] No events produced from Key Dates / page. ({VERSION})")
 
-    # Always add a debug marker so we know this version ran at all
-    warnings.append("[WCA DEBUG] scraper version v2026-01-18a")
+    # Version marker so you can see what ran in ledger.json
+    warnings.append(f"[WCA DEBUG] scraper version {VERSION}")
 
     return events, warnings
