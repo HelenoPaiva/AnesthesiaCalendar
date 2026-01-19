@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-19T02:53:56+00:00",
+  "generated_at": "2026-01-19T03:00:00+00:00",
   "events": [
     {
       "series": "ASA",
@@ -233,6 +233,27 @@
       },
       "source": "scraped",
       "id": "euroanaesthesia-2027-congress-e229c6c727"
+    },
+    {
+      "series": "WCA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-04-15",
+      "end_date": "2026-04-19",
+      "location": "Marrakech, Morocco",
+      "link": "https://wcacongress.org/programme/",
+      "priority": 9,
+      "title": {
+        "en": "WCA 2026 — World Congress of Anaesthesiologists",
+        "pt": "WCA 2026 — Congresso Mundial de Anestesiologia"
+      },
+      "evidence": {
+        "url": "https://wcacongress.org/programme/",
+        "snippet": "15-19 April 2026",
+        "field": "congress_range_tolerant"
+      },
+      "source": "scraped",
+      "id": "wca-2026-congress-380aefe7be"
     }
   ]
 }
