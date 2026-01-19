@@ -6,11 +6,12 @@
 // + Congress dedup: only the next upcoming congress per series
 // + WCA handling: WCA / World Congress of Anaesthesiologists forced as congress, with own series class
 //
-// 2026-01-19 (v3):
-// - DEADLINES FIRST in classification (so WCA deadlines never mis-classified as congress)
-// - Per-series COLORING applied via JS inline styles to the whole card + date chip
+// 2026-01-19 (v4):
+// - Deadlines classified before congresses (WCA deadlines stay on left)
+// - Whole event card is clickable if ev.link (no "Open · Save to calendar" row)
+// - Congress column visually comes before deadlines via CSS (see styles.css)
 
-const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-3";
+const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-4";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -313,7 +314,7 @@ function seriesColors(series) {
   };
 }
 
-// ------------------ ICS ------------------
+// ------------------ ICS helpers (kept but no longer used in UI) ------------------
 
 function toICSDate(iso) {
   if (!iso) return null;
@@ -373,32 +374,17 @@ function buildICS(ev, lang) {
   return lines.join("\r\n");
 }
 
-function triggerICSDownload(ev, lang) {
-  const ics = buildICS(ev, lang);
-  if (!ics) return;
-
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const safeId = (ev.id || `${ev.series || "event"}-${getStart(ev) || ""}`)
-    .replace(/[^a-zA-Z0-9-_]/g, "_")
-    .slice(0, 60);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${safeId || "event"}.ics`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ------------------ Rendering (chip rules) ------------------
+// ------------------ Rendering ------------------
 
 function clearContainer(selector) {
   const el = document.querySelector(selector);
   if (el) el.innerHTML = "";
   return el;
+}
+
+function openEventLink(url) {
+  if (!url) return;
+  window.open(url, "_blank", "noopener");
 }
 
 function renderEventList(container, events, kind) {
@@ -490,34 +476,22 @@ function renderEventList(container, events, kind) {
 
     card.appendChild(metaRow);
 
-    // link + ICS
+    // Make whole card clickable if there is a link
     if (ev.link) {
-      const linkRow = document.createElement("div");
-      linkRow.className = "event-link";
+      card.setAttribute("role", "link");
+      card.tabIndex = 0;
+      card.style.cursor = "pointer";
 
-      const openAnchor = document.createElement("a");
-      openAnchor.href = ev.link;
-      openAnchor.target = "_blank";
-      openAnchor.rel = "noreferrer noopener";
-      openAnchor.textContent = ui(i18n, "open", lang, lang === "pt" ? "Abrir" : "Open");
-      linkRow.appendChild(openAnchor);
-
-      const sep = document.createElement("span");
-      sep.textContent = "·";
-      linkRow.appendChild(sep);
-
-      const icsBtn = document.createElement("button");
-      icsBtn.type = "button";
-      icsBtn.className = "event-ics-btn";
-      icsBtn.textContent = lang === "pt" ? "Adicionar ao calendário" : "Save to calendar";
-      icsBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerICSDownload(ev, lang);
+      card.addEventListener("click", () => {
+        openEventLink(ev.link);
       });
-      linkRow.appendChild(icsBtn);
 
-      card.appendChild(linkRow);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openEventLink(ev.link);
+        }
+      });
     }
 
     container.appendChild(card);
