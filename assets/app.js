@@ -6,12 +6,13 @@
 // + Congress dedup: only the next upcoming congress per series
 // + WCA handling: WCA / World Congress of Anaesthesiologists forced as congress, with own series class
 //
-// 2026-01-19 (v4):
+// 2026-01-19 (v5):
 // - Deadlines classified before congresses (WCA deadlines stay on left)
 // - Whole event card is clickable if ev.link (no "Open · Save to calendar" row)
-// - Congress column visually comes before deadlines via CSS (see styles.css)
+// - Congress column visually comes first (left / first on mobile)
+// - "View source on GitHub" label localized via i18n / fallback
 
-const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-4";
+const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-5";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -314,7 +315,7 @@ function seriesColors(series) {
   };
 }
 
-// ------------------ ICS helpers (kept but no longer used in UI) ------------------
+// ------------------ ICS helpers (kept but not exposed in UI) ------------------
 
 function toICSDate(iso) {
   if (!iso) return null;
@@ -559,6 +560,17 @@ function applyStaticTexts() {
     }
     if (!dt) dt = new Date();
     lastUpdatedEl.textContent = `${label}: ${formatTimeAgo(dt, lang)}`;
+  }
+
+  // Localize "View source on GitHub"
+  const repoEl = document.querySelector("[data-repo-link]");
+  if (repoEl) {
+    repoEl.textContent = ui(
+      i18n,
+      "repo_link",
+      lang,
+      lang === "pt" ? "Ver código no GitHub" : "View source on GitHub"
+    );
   }
 
   const verEl = document.querySelector("[data-app-version]");
