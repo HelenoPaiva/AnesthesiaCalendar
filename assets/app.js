@@ -4,8 +4,9 @@
 // - Deadlines: DATE CHIP + SERIES CHIP ONLY (series chip matches series color)
 // - No location chips anywhere
 // + Congress dedup: only the next upcoming congress per series
+// + WCA handling: WCA / World Congress of Anaesthesiologists forced as congress, with own series class
 
-const APP_VERSION = "2026-01-18 operational-simplified-chips-dedup-1";
+const APP_VERSION = "2026-01-18 operational-simplified-chips-dedup-wca-1";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -170,9 +171,29 @@ function isDeadline(ev) {
   return DEADLINE_TYPES.some((t) => type.includes(t));
 }
 
+// Make congress detection more robust, especially for WCA
 function isCongress(ev) {
   const type = (ev.type || "").toLowerCase();
-  return CONGRESS_TYPES.some((t) => type.includes(t));
+  const series = (ev.series || "").toLowerCase();
+  const title =
+    (ev.title && (ev.title.en || ev.title.pt)) ||
+    ev.title ||
+    "";
+  const titleLower = String(title).toLowerCase();
+
+  // Basic type-based detection
+  if (CONGRESS_TYPES.some((t) => type.includes(t))) return true;
+
+  // WCA / World Congress of Anaesthesiologists / WFSA patterns
+  if (series.includes("wca")) return true;
+  if (series.includes("world congress")) return true;
+  if (series.includes("wfs a") || series.includes("wfsa")) return true;
+
+  if (titleLower.includes("world congress")) return true;
+  if (titleLower.includes("wca")) return true;
+  if (titleLower.includes("wfsa")) return true;
+
+  return false;
 }
 
 function classifyEvents(events) {
@@ -188,7 +209,8 @@ function classifyEvents(events) {
 
   upcoming.forEach((ev) => {
     if (isCongress(ev)) congresses.push(ev);
-    else deadlines.push(ev);
+    else if (isDeadline(ev)) deadlines.push(ev);
+    else deadlines.push(ev); // fallback: anything non-congress goes to deadlines
   });
 
   const sortFn = (a, b) => (getStart(a) || "").localeCompare(getStart(b) || "");
@@ -229,9 +251,22 @@ function classifyEvents(events) {
 function seriesToCssClass(series) {
   if (!series) return null;
   const key = String(series).trim().toLowerCase();
+
   if (key === "asa") return "series-asa";
-  if (key === "euroanaesthesia" || key === "euroanesthesia") return "series-euroanaesthesia";
-  return `series-${key.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40)}`;
+  if (key === "euroanaesthesia" || key === "euroanesthesia")
+    return "series-euroanaesthesia";
+
+  // WCA / WFSA variants
+  if (key === "wca") return "series-wca";
+  if (key.includes("world congress") && key.includes("anaesth"))
+    return "series-wca";
+  if (key.includes("wfsa")) return "series-wca";
+
+  // Fallback slug
+  return `series-${key
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)}`;
 }
 
 // ------------------ ICS ------------------
@@ -331,8 +366,18 @@ function renderEventList(container, events, kind) {
   if (!events || events.length === 0) {
     const msg =
       kind === "deadlines"
-        ? ui(i18n, "no_deadlines", lang, lang === "pt" ? "Nenhum prazo futuro." : "No upcoming deadlines.")
-        : ui(i18n, "no_congresses", lang, lang === "pt" ? "Nenhum congresso futuro." : "No upcoming congresses.");
+        ? ui(
+            i18n,
+            "no_deadlines",
+            lang,
+            lang === "pt" ? "Nenhum prazo futuro." : "No upcoming deadlines."
+          )
+        : ui(
+            i18n,
+            "no_congresses",
+            lang,
+            lang === "pt" ? "Nenhum congresso futuro." : "No upcoming congresses."
+          );
 
     const div = document.createElement("div");
     div.className = "empty-state";
