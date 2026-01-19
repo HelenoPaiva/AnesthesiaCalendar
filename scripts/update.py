@@ -1,239 +1,294 @@
-# scripts/update.py
-"""
-Orchestrator for all scrapers.
-
-Reads data/sources.json, calls the appropriate scraper for each series,
-merges results, applies manual overrides, and writes:
-
-    data/events.json
-    data/ledger.json
-
-This file is what the GitHub Actions workflow should run, e.g.:
-
-    python -m scripts.update
-"""
-
 from __future__ import annotations
 
 import json
+import hashlib
+import importlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from .scrapers import SCRAPERS
 
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
-
-@dataclass
-class SourceConfig:
-    series: str
-    priority: int | None
-    raw: Dict[str, Any]
 
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# Paths & helpers
+# -----------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 
-SOURCES_PATH = DATA_DIR / "sources.json"
+
 EVENTS_PATH = DATA_DIR / "events.json"
 LEDGER_PATH = DATA_DIR / "ledger.json"
+SOURCES_PATH = DATA_DIR / "sources.json"
 MANUAL_OVERRIDES_PATH = DATA_DIR / "manual_overrides.json"
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _now_iso_utc() -> str:
-    """Current time in ISO 8601 with +00:00, matching existing files."""
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+def utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _load_json(path: Path, default: Any) -> Any:
+def load_json(path: Path, default: Any) -> Any:
     if not path.exists():
         return default
     with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except Exception:
+            return default
 
 
-def _save_json(path: Path, obj: Any) -> None:
+def save_json(path: Path, obj: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2, sort_keys=False)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+    tmp.replace(path)
 
 
-def _normalize_sources(raw: Any) -> List[SourceConfig]:
+# -----------------------------------------------------------------------------
+# ID generation
+# -----------------------------------------------------------------------------
+
+def _event_key(ev: Dict[str, Any]) -> str:
+    """Build a deterministic key from the event fields."""
+    series = str(ev.get("series", "")).upper()
+    year = str(ev.get("year", "") or "")
+    etype = str(ev.get("type", "")).lower()
+    # date or start_date is the main temporal anchor
+    date = str(ev.get("date") or ev.get("start_date") or "")
+    # location + link help distinguish rare edge cases
+    loc = str(ev.get("location", "") or "")
+    link = str(ev.get("link", "") or "")
+    key = "|".join([series, year, etype, date, loc, link])
+    return key
+
+
+def assign_ids(events: List[Dict[str, Any]]) -> None:
     """
-    Accepts either:
-      - a list of objects, or
-      - an object with a 'sources' list.
-
-    Returns a list of SourceConfig.
+    Assigns a stable ID to each event if it doesn't already have one.
+    Pattern: <series-lower>-<year-or-na>-<type>-<hash10>
     """
-    if isinstance(raw, dict) and "sources" in raw:
-        entries = raw["sources"]
-    else:
-        entries = raw
+    for ev in events:
+        if ev.get("id"):
 
-    result: List[SourceConfig] = []
-    if not isinstance(entries, list):
-        return result
 
-    for item in entries:
-        if not isinstance(item, dict):
+
+
+
             continue
-        series = item.get("series")
+
+        series = str(ev.get("series", "X")).lower()
+        year = str(ev.get("year") or "na")
+        etype = str(ev.get("type", "event")).lower()
+
+        key = _event_key(ev).encode("utf-8", errors="ignore")
+        digest = hashlib.md5(key).hexdigest()[:10]
+
+        ev["id"] = f"{series}-{year}-{etype}-{digest}"
+
+
+# -----------------------------------------------------------------------------
+# Scraper registry
+# -----------------------------------------------------------------------------
+
+@dataclass
+class ScraperSpec:
+    series: str
+    module_name: str
+    func_name: str
+
+
+SCRAPERS: List[ScraperSpec] = [
+    ScraperSpec("ASA", "asa", "scrape_asa"),
+    ScraperSpec("CBA", "cba", "scrape_cba"),
+    ScraperSpec("COPA", "copa", "scrape_copa"),
+    ScraperSpec("WCA", "wca", "scrape_wca"),
+    ScraperSpec("EUROANAESTHESIA", "euroanaesthesia", "scrape_euroanaesthesia"),
+    ScraperSpec("CLASA", "clasa", "scrape_clasa"),
+    ScraperSpec("LASRA", "lasra", "scrape_lasra"),
+]
+
+
+def load_sources_cfg() -> Dict[str, Dict[str, Any]]:
+    """
+    Returns a map: series -> config dict
+    taken from data/sources.json.
+    """
+    raw = load_json(SOURCES_PATH, {"sources": []})
+    series_map: Dict[str, Dict[str, Any]] = {}
+
+    for entry in raw.get("sources", []):
+        if not isinstance(entry, dict):
+            continue
+        series = str(entry.get("series", "")).upper()
         if not series:
             continue
-        priority = item.get("priority")
-        result.append(SourceConfig(series=series, priority=priority, raw=item))
+        series_map[series] = entry
 
-    return result
+    return series_map
 
 
-def _deep_merge(dst: Dict[str, Any], src: Dict[str, Any]) -> None:
+def run_scrapers(now_iso: str) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
-    Recursively merge src into dst (in-place).
-    Used for manual_overrides.json.
+    Runs all available scrapers and returns (events, warnings).
+    Each scraper returns (events, warnings) where events are dicts.
     """
-    for key, value in src.items():
-        if isinstance(value, dict) and isinstance(dst.get(key), dict):
-            _deep_merge(dst[key], value)
-        else:
-            dst[key] = value
-
-
-# ---------------------------------------------------------------------------
-# Core orchestration
-# ---------------------------------------------------------------------------
-
-def run_all_scrapers() -> Tuple[List[Dict[str, Any]], List[str]]:
-    """
-    Run all scrapers listed in data/sources.json using the SCRAPERS registry.
-    """
-    raw_sources = _load_json(SOURCES_PATH, default=[])
-    sources = _normalize_sources(raw_sources)
-
+    sources_cfg = load_sources_cfg()
     all_events: List[Dict[str, Any]] = []
-    all_warnings: List[str] = []
+    warnings: List[str] = []
 
-    for cfg in sources:
-        series = cfg.series
-        scraper = SCRAPERS.get(series)
+    for spec in SCRAPERS:
+        series = spec.series.upper()
+        cfg = sources_cfg.get(series, {})
 
-        if scraper is None:
-            all_warnings.append(f"[{series}] No scraper registered in scripts/scrapers/__init__.py.")
+        try:
+            mod = importlib.import_module(f"scripts.scrapers.{spec.module_name}")
+            scrape_fn = getattr(mod, spec.func_name)
+        except Exception as e:
+            warnings.append(f"[{series}] scraper not available: {e}")
             continue
 
         try:
-            events, warnings = scraper(cfg.raw)
-        except Exception as e:  # pragma: no cover - network / scraper bugs
-            all_warnings.append(f"[{series}] Scraper raised exception: {e!r}")
+            events, w = scrape_fn(cfg)
+        except Exception as e:
+            warnings.append(f"[{series}] scraper failed: {e}")
             continue
 
-        all_events.extend(events)
-        all_warnings.extend(warnings)
+        for msg in w or []:
+            # Prefix once with series for clarity
+            if msg.startswith("["):
+                warnings.append(msg)
+            else:
+                warnings.append(f"[{series}] {msg}")
 
-    return all_events, all_warnings
+        for ev in events or []:
+            if not isinstance(ev, dict):
+                continue
+            ev.setdefault("series", series)
+            ev.setdefault("source", "scraped")
+            all_events.append(ev)
 
-
-def apply_manual_overrides(events: List[Dict[str, Any]]) -> None:
-    """
-    Apply manual overrides from data/manual_overrides.json (if present),
-    matching by event['id'].
-    """
-    overrides = _load_json(MANUAL_OVERRIDES_PATH, default={})
-    if not isinstance(overrides, dict):
-        return
-
-    by_id: Dict[str, Dict[str, Any]] = overrides
-
-    for ev in events:
-        ev_id = ev.get("id")
-        if not ev_id:
+    # Manual overrides, if any (you said you'll keep this empty in production)
+    manual_raw = load_json(MANUAL_OVERRIDES_PATH, {"events": []})
+    for ev in manual_raw.get("events", []):
+        if not isinstance(ev, dict):
             continue
-        if ev_id in by_id and isinstance(by_id[ev_id], dict):
-            _deep_merge(ev, by_id[ev_id])
+        ev.setdefault("source", "manual")
+        all_events.append(ev)
+
+    # Assign IDs deterministically
+    assign_ids(all_events)
+
+    return all_events, warnings
 
 
-def update_ledger(events: List[Dict[str, Any]], warnings: List[str]) -> Dict[str, Any]:
+
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# Ledger / events generation
+# -----------------------------------------------------------------------------
+
+def rebuild_ledger(now_iso: str, events: List[Dict[str, Any]], warnings: List[str]) -> Dict[str, Any]:
     """
-    Update data/ledger.json based on current events.
-    Preserves first_seen_at when possible.
+    Snapshot-style ledger:
+      - ONLY contains events seen in this run
+      - All statuses are 'active'
+      - No tombstones / 'missing' logic at all
     """
-    now = _now_iso_utc()
-    old_ledger = _load_json(LEDGER_PATH, default={"items": {}, "warnings": []})
-    old_items: Dict[str, Any] = old_ledger.get("items", {}) or {}
+    prev = load_json(LEDGER_PATH, {"updated_at": "", "items": {}, "warnings": []})
+    prev_items: Dict[str, Any] = prev.get("items", {}) or {}
 
     new_items: Dict[str, Any] = {}
 
-    # Index new events by id
     for ev in events:
-        ev_id = ev.get("id")
+        ev_id = str(ev.get("id"))
         if not ev_id:
-            # If an event has no id, skip it; scrapers should always set an id.
+            # Should not happen, but avoid crashing if something went wrong
             continue
 
-        prev = old_items.get(ev_id)
-        first_seen = prev.get("first_seen_at") if isinstance(prev, dict) else now
+        prev_entry = prev_items.get(ev_id)
+        first_seen = prev_entry.get("first_seen_at") if prev_entry else now_iso
 
         new_items[ev_id] = {
             "first_seen_at": first_seen,
-            "last_seen_at": now,
+            "last_seen_at": now_iso,
             "status": "active",
             "event": ev,
         }
 
-    # Build ledger object
     ledger = {
-        "updated_at": now,
+        "updated_at": now_iso,
         "items": new_items,
         "warnings": warnings,
     }
-
     return ledger
 
 
-def build_events_and_ledger() -> None:
+def build_events_json(now_iso: str, ledger: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Orchestrate scraping + overrides + writing JSON files.
+    Build data/events.json from the ledger.
+
+    IMPORTANT: Only 'active' events are included.
+    There is NO 'missing' status anymore, and no tombstones.
     """
-    now = _now_iso_utc()
+    items: Dict[str, Any] = ledger.get("items", {}) or {}
 
-    events, warnings = run_all_scrapers()
-    apply_manual_overrides(events)
+    events: List[Dict[str, Any]] = []
+    for ev_id, entry in items.items():
+        if entry.get("status") != "active":
+            # In this new model, this shouldn't happen,
+            # but we enforce it here just in case.
+            continue
+        ev = entry.get("event")
+        if isinstance(ev, dict):
+            events.append(ev)
 
-    # Sort events by date/start_date then priority descending (optional, but nice)
-    def _event_sort_key(ev: Dict[str, Any]):
-        # congresses use start_date; deadlines use date
-        date = ev.get("date") or ev.get("start_date") or "9999-12-31"
-        # negative priority so higher priority comes first
-        prio = -(ev.get("priority") or 0)
-        return (date, prio)
+    # Optional: sort by series/year/date for stable output
+    def sort_key(ev: Dict[str, Any]) -> Tuple[str, int, str]:
+        series = str(ev.get("series", ""))
+        year = int(ev.get("year") or 0)
+        date = str(ev.get("date") or ev.get("start_date") or "")
+        return (series, year, date)
 
-    events_sorted = sorted(events, key=_event_sort_key)
+    events.sort(key=sort_key)
 
-    events_json = {
-        "generated_at": now,
-        "events": events_sorted,
+    return {
+        "generated_at": now_iso,
+        "events": events,
     }
-    _save_json(EVENTS_PATH, events_json)
 
-    ledger_json = update_ledger(events_sorted, warnings)
-    _save_json(LEDGER_PATH, ledger_json)
 
+# -----------------------------------------------------------------------------
+# Entry point
+# -----------------------------------------------------------------------------
 
 def main() -> None:
-    build_events_and_ledger()
+    now_iso = utcnow_iso()
+
+    events, warnings = run_scrapers(now_iso)
+    ledger = rebuild_ledger(now_iso, events, warnings)
+    events_json = build_events_json(now_iso, ledger)
 
 
-if __name__ == "__main__":
-    main()
+
+    save_json(LEDGER_PATH, ledger)
+    save_json(EVENTS_PATH, events_json)
+
+
