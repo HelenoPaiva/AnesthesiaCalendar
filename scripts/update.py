@@ -9,25 +9,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 # -----------------------------------------------------------------------------
 # Paths & helpers
 # -----------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-
 
 EVENTS_PATH = DATA_DIR / "events.json"
 LEDGER_PATH = DATA_DIR / "ledger.json"
@@ -82,11 +69,6 @@ def assign_ids(events: List[Dict[str, Any]]) -> None:
     """
     for ev in events:
         if ev.get("id"):
-
-
-
-
-
             continue
 
         series = str(ev.get("series", "X")).lower()
@@ -194,13 +176,6 @@ def run_scrapers(now_iso: str) -> Tuple[List[Dict[str, Any]], List[str]]:
     return all_events, warnings
 
 
-
-
-
-
-
-
-
 # -----------------------------------------------------------------------------
 # Ledger / events generation
 # -----------------------------------------------------------------------------
@@ -286,9 +261,9 @@ def main() -> None:
     ledger = rebuild_ledger(now_iso, events, warnings)
     events_json = build_events_json(now_iso, ledger)
 
-
-
     save_json(LEDGER_PATH, ledger)
     save_json(EVENTS_PATH, events_json)
 
 
+if __name__ == "__main__":
+    main()
