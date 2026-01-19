@@ -3,8 +3,9 @@
 // - Congresses: DATE CHIP ONLY (series color applies to card + date chip)
 // - Deadlines: DATE CHIP + SERIES CHIP ONLY (series chip matches series color)
 // - No location chips anywhere
+// + Congress dedup: only the next upcoming congress per series
 
-const APP_VERSION = "2026-01-18 operational-simplified-chips-1";
+const APP_VERSION = "2026-01-18 operational-simplified-chips-dedup-1";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -151,10 +152,12 @@ function formatTimeAgo(date, lang) {
   if (sec < 45) return t("just now", "agora mesmo");
 
   const min = Math.round(sec / 60);
-  if (min < 60) return min === 1 ? t("1 minute ago", "há 1 minuto") : t(`${min} minutes ago`, `há ${min} minutos`);
+  if (min < 60)
+    return min === 1 ? t("1 minute ago", "há 1 minuto") : t(`${min} minutes ago`, `há ${min} minutos`);
 
   const h = Math.round(min / 60);
-  if (h < 24) return h === 1 ? t("1 hour ago", "há 1 hora") : t(`${h} hours ago`, `há ${h} horas`);
+  if (h < 24)
+    return h === 1 ? t("1 hour ago", "há 1 hora") : t(`${h} hours ago`, `há ${h} horas`);
 
   const d = Math.round(h / 24);
   return d === 1 ? t("1 day ago", "há 1 dia") : t(`${d} days ago`, `há ${d} dias`);
@@ -181,7 +184,7 @@ function classifyEvents(events) {
   });
 
   const deadlines = [];
-  const congresses = [];
+  let congresses = [];
 
   upcoming.forEach((ev) => {
     if (isCongress(ev)) congresses.push(ev);
@@ -191,6 +194,32 @@ function classifyEvents(events) {
   const sortFn = (a, b) => (getStart(a) || "").localeCompare(getStart(b) || "");
   deadlines.sort(sortFn);
   congresses.sort(sortFn);
+
+  // ---- DEDUP STEP: only keep the next congress per series ----
+  const seenSeries = new Set();
+  const dedupedCongresses = [];
+
+  for (const ev of congresses) {
+    const key = (ev.series || "").trim().toLowerCase();
+    if (!key) {
+      // No series: keep as-is (cannot dedup)
+      dedupedCongresses.push(ev);
+      continue;
+    }
+    if (seenSeries.has(key)) {
+      // Already have a future congress for this series → skip
+      continue;
+    }
+    seenSeries.add(key);
+    dedupedCongresses.push(ev);
+  }
+
+  congresses = dedupedCongresses;
+
+  console.log("[ACC]", APP_VERSION, "classified:", {
+    deadlines: deadlines.length,
+    congresses: congresses.length,
+  });
 
   return { deadlines, congresses };
 }
@@ -285,7 +314,7 @@ function triggerICSDownload(ev, lang) {
   URL.revokeObjectURL(url);
 }
 
-// ------------------ Rendering (chip rules enforced here) ------------------
+// ------------------ Rendering (chip rules) ------------------
 
 function clearContainer(selector) {
   const el = document.querySelector(selector);
@@ -348,7 +377,7 @@ function renderEventList(container, events, kind) {
       metaRow.appendChild(dateChip);
     }
 
-    // SERIES CHIP (deadlines only, requested)
+    // SERIES CHIP (deadlines only)
     if (kind === "deadlines" && ev.series) {
       const seriesChip = document.createElement("span");
       seriesChip.className = "event-chip event-series";
@@ -392,7 +421,7 @@ function renderEventList(container, events, kind) {
   });
 }
 
-// ------------------ Static texts (last updated + counts + titles + version) ------------------
+// ------------------ Static texts ------------------
 
 function applyStaticTexts() {
   const { i18n, data, lang } = appState;
@@ -411,23 +440,42 @@ function applyStaticTexts() {
 
   const deadlinesTitleEl = document.querySelector("[data-next-deadlines-title]");
   if (deadlinesTitleEl) {
-    deadlinesTitleEl.textContent = ui(i18n, "next_deadlines", lang, lang === "pt" ? "Próximos prazos" : "Next deadlines");
+    deadlinesTitleEl.textContent = ui(
+      i18n,
+      "next_deadlines",
+      lang,
+      lang === "pt" ? "Próximos prazos" : "Next deadlines"
+    );
   }
 
   const congressesTitleEl = document.querySelector("[data-upcoming-congresses-title]");
   if (congressesTitleEl) {
-    congressesTitleEl.textContent = ui(i18n, "upcoming_congresses", lang, lang === "pt" ? "Próximos congressos" : "Upcoming congresses");
+    congressesTitleEl.textContent = ui(
+      i18n,
+      "upcoming_congresses",
+      lang,
+      lang === "pt" ? "Próximos congressos" : "Upcoming congresses"
+    );
   }
 
   const dlCount = document.querySelector("[data-next-deadlines-count]");
-  if (dlCount) dlCount.textContent = lang === "pt" ? `${appState.deadlines.length} item(ns)` : `${appState.deadlines.length} item(s)`;
+  if (dlCount)
+    dlCount.textContent =
+      lang === "pt" ? `${appState.deadlines.length} item(ns)` : `${appState.deadlines.length} item(s)`;
 
   const cgCount = document.querySelector("[data-upcoming-congresses-count]");
-  if (cgCount) cgCount.textContent = lang === "pt" ? `${appState.congresses.length} item(ns)` : `${appState.congresses.length} item(s)`;
+  if (cgCount)
+    cgCount.textContent =
+      lang === "pt" ? `${appState.congresses.length} item(ns)` : `${appState.congresses.length} item(s)`;
 
   const lastUpdatedEl = document.querySelector("[data-last-updated]");
   if (lastUpdatedEl) {
-    const label = ui(i18n, "last_updated", lang, lang === "pt" ? "Atualizado" : "Last updated");
+    const label = ui(
+      i18n,
+      "last_updated",
+      lang,
+      lang === "pt" ? "Atualizado" : "Last updated"
+    );
     let dt = null;
     if (data?.generated_at) {
       const parsed = new Date(data.generated_at);
