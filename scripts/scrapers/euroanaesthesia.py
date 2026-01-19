@@ -6,9 +6,11 @@ import re
 import html as html_lib
 from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+from datetime import datetime
 
 
-SCRAPER_VERSION = "v2026-01-19b"
+SCRAPER_VERSION = "v2026-01-19c"
 
 MONTHS_EN = {
     "january": 1,
@@ -38,6 +40,21 @@ def _fetch(url: str) -> str:
     with urlopen(req, timeout=25) as resp:  # nosec - sandboxed in Actions
         raw = resp.read()
     return raw.decode("utf-8", errors="ignore")
+
+
+def _url_exists(url: str) -> bool:
+    """Return True if URL looks reachable (HTTP 200-ish), False on definite 404/410."""
+    try:
+        _fetch(url)
+        return True
+    except HTTPError as e:
+        if e.code in (404, 410):
+            return False
+        return True
+    except URLError:
+        return False
+    except Exception:
+        return False
 
 
 def _ymd(y: int, m: int, d: int) -> str:
@@ -177,16 +194,17 @@ def _extract_label_date_pairs(html: str) -> List[Tuple[str, str]]:
 
     Handles:
       A) <p><strong>Label</strong></p> <p><a ...>DATE</a>...</p>
-      B) <p><strong>DATE</strong> – Label text</p>
+      B) <p><strong>Label</strong><br> <a ...>DATE</a>...</p>
+      C) <p><strong>DATE</strong> – Label text</p>
     """
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
 
     pairs: List[Tuple[str, str]] = []
 
-    # --- Pattern A: label in <p><strong>, date in next <p><a> ---
+    # Pattern A: label in one <p>, date in next <p><a>
     pattern_a = re.compile(
-        r"<p>\s*<strong>(?P<label>[^<]+)</strong>\s*</p>\s*"
-        r"<p>\s*<a[^>]*>(?P<date>[^<]+)</a",
+        r"<p[^>]*>\s*<strong>(?P<label>[^<]+)</strong>\s*</p>\s*"
+        r"<p[^>]*>.*?<a[^>]*>(?P<date>[^<]+)</a",
         flags=re.IGNORECASE,
     )
 
@@ -196,20 +214,33 @@ def _extract_label_date_pairs(html: str) -> List[Tuple[str, str]]:
         if label and date:
             pairs.append((label, date))
 
-    # --- Pattern B: date in <strong>, label in same <p> after dash ---
+    # Pattern B: label + <br> + <a>DATE</a> all in same <p>
     pattern_b = re.compile(
-        r"<p[^>]*>\s*<strong>(?P<date>[^<]+)</strong>\s*"
-        r"(?:[-–]\s*)?(?P<label>[^<]+)</p>",
+        r"<p[^>]*>\s*<strong>(?P<label>[^<]+)</strong>.*?"
+        r"<a[^>]*>(?P<date>[^<]+)</a",
         flags=re.IGNORECASE,
     )
 
     for m in pattern_b.finditer(text):
-        date = _clean_text(m.group("date"))
         label = _clean_text(m.group("label"))
+        date = _clean_text(m.group("date"))
         if label and date:
             pairs.append((label, date))
 
-    # De-duplicate (label, date) pairs
+    # Pattern C: DATE in strong, label text after dash
+    pattern_c = re.compile(
+        r"<p[^>]*>\s*<strong>(?P<date>[^<]+)</strong>\s*"
+        r"(?:[-–]\s*(?P<label>[^<]+))?</p>",
+        flags=re.IGNORECASE,
+    )
+
+    for m in pattern_c.finditer(text):
+        date = _clean_text(m.group("date"))
+        label = _clean_text(m.group("label") or "")
+        if label and date:
+            pairs.append((label, date))
+
+    # De-duplicate pairs
     seen = set()
     unique_pairs: List[Tuple[str, str]] = []
     for label, date in pairs:
@@ -364,13 +395,38 @@ def _scrape_one_url(url: str, cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]]
     return events, warnings
 
 
+def _scrape_all_years_from_base(base_url: str, cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """
+    If sources.json gives just 'https://euroanaesthesia.org/', probe /2025/, /2026/, /2027/, etc.
+    Year-agnostic: we still derive the year from parsed dates, not from the URL.
+    """
+    base = base_url.rstrip("/") + "/"
+
+    now_year = datetime.utcnow().year
+    start_year = max(2023, now_year - 1)
+    max_years_ahead = 6  # should cover 2025..2031 nicely
+
+    events: List[Dict[str, Any]] = []
+    warnings: List[str] = []
+
+    for y in range(start_year, start_year + max_years_ahead + 1):
+        url = f"{base}{y}/"
+        if not _url_exists(url):
+            continue
+        ev, w = _scrape_one_url(url, cfg)
+        events.extend(ev)
+        warnings.extend(w)
+
+    return events, warnings
+
+
 def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Scrape Euroanaesthesia "Important dates" for each URL in sources.json.
 
-    - No automatic year probing: it uses exactly the URLs you list.
-      (e.g. https://euroanaesthesia.org/2026/, https://euroanaesthesia.org/2027/)
-    - Robust to both 2025-style and 2026-style timeline markup.
+    - If URL already contains /20xx/, scrape it directly.
+    - If URL is the root (e.g., https://euroanaesthesia.org/), probe /YYYY/ pages.
+    - Congress + deadlines are parsed from 'Important dates' timelines.
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
@@ -380,11 +436,25 @@ def scrape_euroanaesthesia(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], L
     all_events: List[Dict[str, Any]] = []
 
     for url in urls:
-        ev, w = _scrape_one_url(url, cfg)
-        all_events.extend(ev)
-        warnings.extend(w)
+        u = url.rstrip("/")
+        m_year = re.search(r"/(20\d{2})$", u)
+        if m_year:
+            # Already a year-specific URL, scrape directly
+            ev, w = _scrape_one_url(u + "/", cfg)
+            all_events.extend(ev)
+            warnings.extend(w)
+        else:
+            # Base/root URL: probe year pages
+            ev, w = _scrape_all_years_from_base(u, cfg)
+            all_events.extend(ev)
+            warnings.extend(w)
 
     # Marker so we always know what code ran
     warnings.append(f"[EUROANAESTHESIA DEBUG] scraper version {SCRAPER_VERSION}")
+
+    if not all_events:
+        warnings.append(
+            f"[EUROANAESTHESIA] No events produced (site structure may have changed). ({SCRAPER_VERSION})"
+        )
 
     return all_events, warnings
