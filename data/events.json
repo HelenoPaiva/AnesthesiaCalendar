@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-19T14:12:38+00:00",
+  "generated_at": "2026-01-19T14:17:15+00:00",
   "events": [
     {
       "series": "ASA",
@@ -204,23 +204,35 @@
     },
     {
       "series": "EUROANAESTHESIA",
-      "year": 2025,
-      "type": "abstract_open",
-      "date": "2025-05-27",
-      "location": "—",
-      "link": "https://euroanaesthesia.org/",
-      "priority": 7,
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-06-06",
+      "end_date": "2026-06-08",
+      "location": "Rotterdam, The Netherlands",
+      "link": "https://euroanaesthesia.org/2026/",
+      "priority": 8,
       "title": {
-        "en": "Euroanaesthesia 2025 — Abstract submission opens",
-        "pt": "Euroanaesthesia 2025 — Abertura de submissão de resumos"
-      },
-      "evidence": {
-        "url": "https://euroanaesthesia.org/",
-        "snippet": "Abstract submission opens</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/ON23048677\" target=\"_blank\" rel=\"noopener\" data-id=\"ON23048677\">01 November 2024</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> <p> </p> <p><strong>Early registration opens (Physical congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/Yy23634752\" target=\"_blank\" rel=\"noopener\" data-id=\"Yy23634752\">28 November 2024</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> <p> </p> <p><strong>Group registration opens</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/Yy23634752\" target=\"_blank\" rel=\"noopener\" data-id=\"Yy23634752\">28 November 2024</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> </div> </div> <div class=\"timeline__content-item-event\"> <h4 class=\"color-white\"> December 2024 </h4> <div class=\"timeline__content-item-date\"> <p><strong>Abstract submission closes</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/Fz23048680\" target=\"_blank\" rel=\"noopener\" data-id=\"Fz23048680\">05 December 2024</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> </div> </div> </div> <div class=\"timeline__content-item \"> <div class=\"timeline__content-item-event\"> <h4 class=\"color-white\"> February 2025 </h4> <div class=\"timeline__content-item-date\"> <p><strong>Registration opens (Virtual congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/ip23634772\" target=\"_blank\" rel=\"noopener\" data-id=\"ip23634772\">06 February 2025</a><script src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async=\"\" defer=\"defer\" type=\"text/javascript\"></script></p> <p> </p> <p><strong>Early registration closes (Physical congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/sp23634756\" target=\"_blank\" rel=\"noopener\" data-id=\"sp23634756\">26 February 2025</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> <p> </p> <p><strong>Late registration opens (Physical congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/XS23634760\" target=\"_blank\" rel=\"noopener\" data-id=\"XS23634760\">27 February 2025</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> </div> </div> <div class=\"timeline__content-item-event\"> <h4 class=\"color-white\"> March 2025 </h4> <div class=\"timeline__content-item-date\"> <p><strong>Abstract presenter registration closes</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/Fm23634853\" target=\"_blank\" rel=\"noopener\" data-id=\"Fm23634853\">27 March 2025</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> </div> </div> </div> <div class=\"timeline__content-item \"> <div class=\"timeline__content-item-event\"> <h4 class=\"color-white\"> May 2025 </h4> <div class=\"timeline__content-item-date\"> <p><strong>Late registration closes (Physical congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/eJ23634758\" target=\"_blank\" rel=\"noopener\" data-id=\"eJ23634758\">20 May 2025</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> <p> </p> <p><strong>Registration closes (Virtual congress)</strong></p> <p><a class=\"addeventatc\" title=\"Add to Calendar\" href=\"https://www.addevent.com/event/wL23634773\" target=\"_blank\" rel=\"noopener\" data-id=\"wL23634773\">27 May 2025</a> <script type=\"text/javascript\" src=\"https://cdn.addevent.com/libs/atc/1.6.1/atc.min.js\" async defer></script></p> <p> </p> <p><strong>Congress Dates — 25-27 May 2025",
-        "field": "important_dates_timeline"
+        "en": "Euroanaesthesia 2026 — ESAIC Annual Congress",
+        "pt": "Euroanaesthesia 2026 — Congresso anual da ESAIC"
       },
       "source": "scraped",
-      "id": "euroanaesthesia-2025-abstract_open-ede17f8dd3"
+      "id": "euroanaesthesia-2026-congress-b31acb0f7c"
+    },
+    {
+      "series": "EUROANAESTHESIA",
+      "year": 2027,
+      "type": "congress",
+      "start_date": "2027-05-29",
+      "end_date": "2027-05-31",
+      "location": "Rotterdam, The Netherlands",
+      "link": "https://euroanaesthesia.org/2027/",
+      "priority": 8,
+      "title": {
+        "en": "Euroanaesthesia 2027 — ESAIC Annual Congress",
+        "pt": "Euroanaesthesia 2027 — Congresso anual da ESAIC"
+      },
+      "source": "scraped",
+      "id": "euroanaesthesia-2027-congress-e229c6c727"
     },
     {
       "series": "WCA",
