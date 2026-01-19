@@ -42,6 +42,7 @@ def _ymd(y: int, m: int, d: int) -> str:
 
 
 def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    raise RuntimeError("WCA TEST CRASH – if you see this, wca.py is executing")
     """
     Scrape WCA key dates from wcacongress.org (Programme page).
 
