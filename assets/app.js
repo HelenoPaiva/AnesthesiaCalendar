@@ -1,8 +1,8 @@
 // assets/app.js — deadlines + congresses + ICS + language switch
 // + series-based color coding (chips + card glow/shadow)
-// + congress location chip normalization (ASA now shows a location chip too)
+// + location chip: always show ev.location if present (including ASA "ASA Annual Meeting")
 
-const APP_VERSION = "2026-01-18 series-colors-chips-2";
+const APP_VERSION = "2026-01-18 series-colors-chips-3";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -19,12 +19,7 @@ const DEADLINE_TYPES = [
   "deadline",
 ];
 
-const CONGRESS_TYPES = [
-  "congress",
-  "meeting",
-  "main_event",
-  "annual_meeting",
-];
+const CONGRESS_TYPES = ["congress", "meeting", "main_event", "annual_meeting"];
 
 const appState = {
   i18n: null,
@@ -126,13 +121,7 @@ function relativeDayLabel(i18n, lang, dateStr, todayStr) {
 
   if (diff === 0) return ui(i18n, "today", lang, lang === "pt" ? "Hoje" : "Today");
 
-  const tpl = ui(
-    i18n,
-    "in_days",
-    lang,
-    lang === "pt" ? "em {n} dias" : "in {n} days"
-  );
-
+  const tpl = ui(i18n, "in_days", lang, lang === "pt" ? "em {n} dias" : "in {n} days");
   if (diff > 0) return tpl.replace("{n}", diff);
   return tpl.replace("{n}", `-${Math.abs(diff)}`);
 }
@@ -211,9 +200,9 @@ function seriesToCssClass(series) {
   if (!key) return null;
 
   const map = {
-    "asa": "series-asa",
-    "euroanaesthesia": "series-euroanaesthesia",
-    "euroanesthesia": "series-euroanaesthesia",
+    asa: "series-asa",
+    euroanaesthesia: "series-euroanaesthesia",
+    euroanesthesia: "series-euroanaesthesia",
   };
 
   if (map[key]) return map[key];
@@ -227,32 +216,20 @@ function seriesToCssClass(series) {
   return `series-${slug}`;
 }
 
-// ---------- Location chip normalization ----------
+// ---------- Location chip (fixed) ----------
+// Always show ev.location if it exists and is not blank/placeholder.
+// Only fallback to TBA if it is missing or "—".
 
-// Some congress entries may have a generic "location" (e.g., "ASA Annual Meeting").
-// For congresses, we want a "where" chip that is actually useful.
-// If we cannot infer a real location, we show "TBA" / "a confirmar" (without inventing data).
-
-function isGenericLocationText(text) {
+function isBlankOrDashLocation(text) {
   if (!text) return true;
-  const t = String(text).trim().toLowerCase();
+  const t = String(text).trim();
   if (!t) return true;
-  if (t === "—" || t === "-" || t === "tba") return true;
-  if (t.includes("annual meeting")) return true;
-  if (t.includes("congress")) return true;
-  if (t.includes("meeting")) return true;
+  if (t === "—" || t === "-" || t.toLowerCase() === "tba") return true;
   return false;
 }
 
 function getDisplayLocation(ev, lang) {
-  // Only enforce the chip for congress-like items
-  const isCongressLike = (ev.type || "").toLowerCase() === "congress" || !!ev.start_date || isCongress(ev);
-  if (!isCongressLike) return ev.location || "";
-
-  const loc = ev.location || "";
-  if (!isGenericLocationText(loc)) return loc;
-
-  // No good location available → show explicit placeholder
+  if (!isBlankOrDashLocation(ev.location)) return String(ev.location).trim();
   return lang === "pt" ? "Local: a confirmar" : "Location: TBA";
 }
 
@@ -360,8 +337,12 @@ function renderEventList(container, events, i18n, lang, kind) {
     const emptyKey = kind === "deadlines" ? "no_deadlines" : "no_congresses";
     const fallback =
       kind === "deadlines"
-        ? lang === "pt" ? "Nenhum prazo futuro." : "No upcoming deadlines."
-        : lang === "pt" ? "Nenhum congresso futuro." : "No upcoming congresses.";
+        ? lang === "pt"
+          ? "Nenhum prazo futuro."
+          : "No upcoming deadlines."
+        : lang === "pt"
+          ? "Nenhum congresso futuro."
+          : "No upcoming congresses.";
     const msg = ui(i18n, emptyKey, lang, fallback);
 
     const div = document.createElement("div");
@@ -408,7 +389,7 @@ function renderEventList(container, events, i18n, lang, kind) {
       metaRow.appendChild(dateChip);
     }
 
-    // Location chip: now normalized for congresses (ASA will show "Location: TBA" until real city is available)
+    // Location chip (fixed: ASA "ASA Annual Meeting" will display)
     const displayLoc = getDisplayLocation(ev, lang);
     if (displayLoc) {
       const locChip = document.createElement("span");
