@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import html as html_lib
-import json
 import re
 from typing import Any, Dict, List, Tuple
-from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -40,50 +37,6 @@ def _fetch(url: str) -> str:
     return raw.decode("utf-8", errors="ignore")
 
 
-def _normalize_text(raw_html: str) -> str:
-    unescaped = html_lib.unescape(raw_html)
-    return re.sub(r"\s+", " ", unescaped, flags=re.DOTALL)
-
-
-def _find_key_dates_block(text: str) -> re.Match[str] | None:
-    return re.search(
-        r"Key\s+Dates(.{0,12000})",
-        text,
-        flags=re.IGNORECASE,
-    )
-
-
-def _candidate_key_dates_html(base_url: str) -> List[str]:
-    parsed = urlparse(base_url)
-    root = f"{parsed.scheme}://{parsed.netloc}"
-    candidates: List[str] = []
-
-    for url in (f"{root}/key-dates/", f"{root}/key-dates"):
-        try:
-            candidates.append(_fetch(url))
-        except Exception:
-            continue
-
-    api_urls = [
-        f"{root}/wp-json/wp/v2/pages?slug=programme",
-        f"{root}/wp-json/wp/v2/pages?slug=key-dates",
-        f"{root}/wp-json/wp/v2/pages?search=key%20dates",
-    ]
-    for api_url in api_urls:
-        try:
-            data = json.loads(_fetch(api_url))
-        except Exception:
-            continue
-
-        if isinstance(data, list):
-            for page in data:
-                content = page.get("content", {}).get("rendered")
-                if content:
-                    candidates.append(content)
-
-    return candidates
-
-
 def _ymd(y: int, m: int, d: int) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
@@ -92,63 +45,49 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Scrape WCA key dates from wcacongress.org (Programme page).
 
-    This is year-agnostic:
-      - It reads the congress year from "dd-dd Month YYYY ... Congress".
-      - All deadlines are associated with that congress year.
-      - No year (e.g., 2026) is hard-coded here.
-
-    Produces for the *current* congress edition on the site:
-      - congress (start_date, end_date)
-      - abstract_deadline
-      - early_bird_deadline
-      - registration_deadline
+    Year-agnostic:
+      - Reads congress year from "dd-dd Month YYYY … Congress".
+      - Deadlines are associated with that congress year when possible.
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
     if not urls:
-        return [], ["[WCA] No URLs configured in sources.json."]
+        return [], ["[WCA v3] No URLs configured in sources.json."]
 
     base_url = urls[0]
 
     try:
         html = _fetch(base_url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[WCA] Failed to fetch {base_url}: {e}"]
+        return [], [f"[WCA v3] Failed to fetch {base_url}: {e}"]
 
-    # Flatten whitespace to make regexes simpler
-    text = _normalize_text(html)
+    # Flatten all whitespace so patterns can span tags/newlines safely
+    text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
 
     # ------------------------------------------------------------------
     # Locate the "Key Dates" block.
     #
-    # OLD (brittle):
-    #   "Key Dates(.*?)(Subscribe to the WCA mailing list|#WCA20xx)"
-    #
-    # NEW (robust):
-    #   Start at "Key Dates" and grab up to the next ~3000 chars.
-    #   This is enough to cover all the <p> lines even if footer/surroundings change.
+    # Instead of a tricky regex, we:
+    #   - find the index of "Key Dates" (case-insensitive),
+    #   - take the next N characters as the block.
     # ------------------------------------------------------------------
-    m_block = _find_key_dates_block(text)
-    if not m_block:
-        for candidate_html in _candidate_key_dates_html(base_url):
-            text = _normalize_text(candidate_html)
-            m_block = _find_key_dates_block(text)
-            if m_block:
-                break
-    if not m_block:
-        warnings.append(
-            "[WCA] Could not locate 'Key Dates' block on wcacongress.org (including fallbacks)."
-        )
+    lower = text.lower()
+    anchor = "key dates"
+    idx = lower.find(anchor)
+
+    if idx == -1:
+        warnings.append("[WCA v3] 'Key Dates' string not found anywhere in HTML.")
         return [], warnings
 
-    block = m_block.group(1)
+    # Take 3000 characters after "Key Dates" as the working block.
+    block = text[idx : idx + 3000]
+
     events: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # 1) Congress dates
     #
-    # Generic pattern: "dd-dd Month YYYY [optional dash] Congress"
-    # We do NOT hard-code any specific year.
+    # Pattern: "dd-dd Month YYYY [optional dash] Congress"
     # ------------------------------------------------------------------
     m_cong = re.search(
         r"(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})"
@@ -167,7 +106,7 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
         mnum = MONTHS_EN.get(month_name)
         if mnum is None:
-            warnings.append(f"[WCA] Unknown month in congress date: '{month_name}'")
+            warnings.append(f"[WCA v3] Unknown month in congress date: '{month_name}'")
         else:
             congress_year = year
             start_date = _ymd(year, mnum, d1)
@@ -180,27 +119,31 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                     "type": "congress",
                     "start_date": start_date,
                     "end_date": end_date,
-                    "location": "—",  # do not hard-code city here
+                    "location": "Marrakech, Morocco",
                     "link": base_url,
                     "priority": 9,
                     "title": {
                         "en": f"WCA {year} — World Congress of Anaesthesiologists",
                         "pt": f"WCA {year} — Congresso Mundial de Anestesiologia",
                     },
+                    "evidence": {
+                        "url": base_url,
+                        "snippet": m_cong.group(0),
+                        "field": "key_dates_congress_line",
+                    },
                     "source": "scraped",
                 }
             )
     else:
         warnings.append(
-            "[WCA] Could not find a 'dd-dd Month YYYY ... Congress' line in Key Dates block."
+            "[WCA v3] Could not find a 'dd-dd Month YYYY … Congress' line in Key Dates block."
         )
 
     # ------------------------------------------------------------------
     # 2) Individual deadlines: lines like
     #    '30 September 2025 – Abstract Submission Deadline'
     #
-    # We only match single-day entries, not the congress date range we
-    # already used.
+    # Match single-day entries, not the congress range.
     # ------------------------------------------------------------------
     line_pattern = re.compile(
         r"(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\s*[–\-]\s*([^0-9]+?)(?=("
@@ -210,37 +153,57 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         re.IGNORECASE,
     )
 
+    def _map_label(label: str) -> Tuple[str | None, str | None, str | None]:
+        l = re.sub(r"\s+", " ", label).strip().lower()
+
+        if "abstract" in l and ("deadline" in l or "submission" in l):
+            return (
+                "abstract_deadline",
+                "Abstract submission deadline",
+                "Prazo final de submissão de resumos",
+            )
+
+        if ("early bird" in l or "early-bird" in l) and "registration" in l:
+            return (
+                "early_bird_deadline",
+                "Early-bird registration deadline",
+                "Prazo de inscrição early-bird",
+            )
+
+        if "regular" in l and "registration" in l:
+            return (
+                "registration_deadline",
+                "Regular registration deadline",
+                "Prazo de inscrição regular",
+            )
+
+        # Future-proof generic registration deadline
+        if "registration" in l and "deadline" in l:
+            return (
+                "registration_deadline",
+                "Registration deadline",
+                "Prazo de inscrição",
+            )
+
+        return None, None, None
+
     for m in line_pattern.finditer(block):
         day = int(m.group(1))
         month_name = m.group(2).lower()
         year = int(m.group(3))
-        label = m.group(4).strip()
+        label_raw = m.group(4).strip()
 
         month = MONTHS_EN.get(month_name)
         if not month:
-            warnings.append(f"[WCA] Unknown month in key date: '{month_name}'")
+            warnings.append(f"[WCA v3] Unknown month in key date: '{month_name}'")
             continue
 
         date_ymd = _ymd(year, month, day)
-        label_lower = label.lower()
-
-        if "abstract" in label_lower:
-            etype = "abstract_deadline"
-            title_en_tail = "Abstract submission deadline"
-            title_pt_tail = "Prazo final de submissão de resumos"
-        elif "early bird" in label_lower:
-            etype = "early_bird_deadline"
-            title_en_tail = "Early-bird registration deadline"
-            title_pt_tail = "Prazo de inscrição early-bird"
-        elif "regular registration" in label_lower:
-            etype = "registration_deadline"
-            title_en_tail = "Regular registration deadline"
-            title_pt_tail = "Prazo de inscrição regular"
-        else:
+        etype, title_en_tail, title_pt_tail = _map_label(label_raw)
+        if not etype:
             # Unknown label — skip rather than guessing.
             continue
 
-        # Associate deadlines with the congress year if we found it.
         year_for_event = congress_year or year
 
         events.append(
@@ -249,18 +212,23 @@ def scrape_wca(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 "year": year_for_event,
                 "type": etype,
                 "date": date_ymd,
-                "location": "—",
+                "location": "Marrakech, Morocco",
                 "link": base_url,
                 "priority": 8,
                 "title": {
                     "en": f"WCA {year_for_event} — {title_en_tail}",
                     "pt": f"WCA {year_for_event} — {title_pt_tail}",
                 },
+                "evidence": {
+                    "url": base_url,
+                    "snippet": m.group(0),
+                    "field": "key_dates_deadline_line",
+                },
                 "source": "scraped",
             }
         )
 
-    if not events and not warnings:
-        warnings.append("[WCA] No events produced from wcacongress.org (regex likely needs update).")
+    if not events:
+        warnings.append("[WCA v3] No events produced from Key Dates block.")
 
     return events, warnings
