@@ -6,12 +6,11 @@
 // + Congress dedup: only the next upcoming congress per series
 // + WCA handling: WCA / World Congress of Anaesthesiologists forced as congress, with own series class
 //
-// FIX (2026-01-19):
-// - Classify DEADLINES BEFORE congress detection.
-//   This prevents WCA (and any other series with "congressy" names) deadlines
-//   from being misclassified as congresses and then lost due to congress dedup.
+// 2026-01-19 (v3):
+// - DEADLINES FIRST in classification (so WCA deadlines never mis-classified as congress)
+// - Per-series COLORING applied via JS inline styles to the whole card + date chip
 
-const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-2";
+const APP_VERSION = "2026-01-19 operational-simplified-chips-dedup-wca-3";
 
 const DATA_URL = "./data/events.json";
 const I18N_URL = "./data/i18n.json";
@@ -183,8 +182,8 @@ function isCongress(ev) {
   // Basic type-based detection
   if (CONGRESS_TYPES.some((t) => type.includes(t))) return true;
 
-  // WCA / World Congress of Anaesthesiologists / WFSA patterns (for congresses)
-  // NOTE: deadlines must be caught by isDeadline FIRST (see classifyEvents).
+  // WCA / World Congress of Anaesthesiologists / WFSA patterns
+  // (only reached if not classified as a deadline first)
   if (series.includes("wca")) return true;
   if (series.includes("world congress")) return true;
   if (series.includes("wfsa")) return true;
@@ -208,7 +207,7 @@ function classifyEvents(events) {
   let congresses = [];
 
   upcoming.forEach((ev) => {
-    // ✅ FIX: Deadlines first, always.
+    // Deadlines first, always
     if (isDeadline(ev)) deadlines.push(ev);
     else if (isCongress(ev)) congresses.push(ev);
     else deadlines.push(ev); // fallback: anything non-congress goes to deadlines
@@ -247,7 +246,7 @@ function classifyEvents(events) {
   return { deadlines, congresses };
 }
 
-// ------------------ Series color mapping ------------------
+// ------------------ Series → CSS class + colors ------------------
 
 function seriesToCssClass(series) {
   if (!series) return null;
@@ -267,6 +266,51 @@ function seriesToCssClass(series) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40)}`;
+}
+
+// Color palette for big pill + date chip, per series
+function seriesColors(series) {
+  if (!series) return null;
+  const key = String(series).trim().toLowerCase();
+
+  if (key === "asa") {
+    return {
+      bg: "linear-gradient(135deg, rgba(37,99,235,0.3), rgba(15,23,42,0.98))",
+      border: "rgba(59,130,246,0.9)",
+      shadow: "0 16px 40px rgba(37,99,235,0.55)",
+      chipBg: "rgba(15,23,42,0.92)",
+      chipBorder: "rgba(191,219,254,0.95)",
+    };
+  }
+
+  if (key === "euroanaesthesia" || key === "euroanesthesia") {
+    return {
+      bg: "linear-gradient(135deg, rgba(168,85,247,0.32), rgba(15,23,42,0.98))",
+      border: "rgba(168,85,247,0.95)",
+      shadow: "0 16px 40px rgba(168,85,247,0.55)",
+      chipBg: "rgba(15,23,42,0.92)",
+      chipBorder: "rgba(233,213,255,0.95)",
+    };
+  }
+
+  if (key === "wca" || key.includes("world congress") || key.includes("wfsa")) {
+    return {
+      bg: "linear-gradient(135deg, rgba(34,197,94,0.32), rgba(15,23,42,0.98))",
+      border: "rgba(34,197,94,0.95)",
+      shadow: "0 16px 40px rgba(34,197,94,0.55)",
+      chipBg: "rgba(15,23,42,0.92)",
+      chipBorder: "rgba(187,247,208,0.95)",
+    };
+  }
+
+  // Fallback neutral
+  return {
+    bg: "linear-gradient(135deg, rgba(148,163,184,0.28), rgba(15,23,42,0.98))",
+    border: "rgba(148,163,184,0.95)",
+    shadow: "0 16px 38px rgba(148,163,184,0.5)",
+    chipBg: "rgba(15,23,42,0.92)",
+    chipBorder: "rgba(226,232,240,0.95)",
+  };
 }
 
 // ------------------ ICS ------------------
@@ -392,11 +436,18 @@ function renderEventList(container, events, kind) {
     const card = document.createElement("article");
     card.className = "event-card";
 
-    // series coloring applied to card + date chip
     const sc = seriesToCssClass(ev.series);
     if (sc) {
       card.classList.add("series-colored");
       card.classList.add(sc);
+    }
+
+    // Inline color palette so the WHOLE pill is clearly tinted
+    const palette = seriesColors(ev.series);
+    if (palette) {
+      card.style.background = palette.bg;
+      card.style.borderColor = palette.border;
+      card.style.boxShadow = palette.shadow;
     }
 
     const title = document.createElement("div");
@@ -419,6 +470,13 @@ function renderEventList(container, events, kind) {
 
       const rel = relativeDayLabel(i18n, lang, startIso, todayStr);
       dateChip.textContent = `${datePart} • ${rel}`;
+
+      // Color chip using same palette
+      if (palette) {
+        dateChip.style.background = palette.chipBg;
+        dateChip.style.borderColor = palette.chipBorder || palette.border;
+      }
+
       metaRow.appendChild(dateChip);
     }
 
@@ -432,7 +490,7 @@ function renderEventList(container, events, kind) {
 
     card.appendChild(metaRow);
 
-    // link + ICS (kept)
+    // link + ICS
     if (ev.link) {
       const linkRow = document.createElement("div");
       linkRow.className = "event-link";
