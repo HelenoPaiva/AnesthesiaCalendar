@@ -9,8 +9,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 
-
-SCRAPER_VERSION = "v2026-01-19c"
+SCRAPER_VERSION = "v2026-01-19d"
 
 MONTHS_EN = {
     "january": 1,
@@ -83,10 +82,11 @@ def _flatten(html: str) -> str:
     return re.sub(r"\s+", " ", html, flags=re.DOTALL).strip()
 
 
-def _parse_en_range(text: str) -> Tuple[int, int, int, int] | None:
+def _parse_en_range(text: str, forced_year: int | None) -> Tuple[int, int, int, int] | None:
     """
     Parse: Month DD–DD, YYYY  (English)
     Example: April 24-27, 2025
+    If forced_year is provided, override the parsed year with it.
     """
     m = re.search(
         r"\b([A-Za-z]+)\s+(\d{1,2})\s*[-–]\s*(\d{1,2}),?\s+(20\d{2})\b",
@@ -99,18 +99,39 @@ def _parse_en_range(text: str) -> Tuple[int, int, int, int] | None:
     d1 = int(m.group(2))
     d2 = int(m.group(3))
     y = int(m.group(4))
+    if forced_year is not None:
+        y = forced_year
     mnum = MONTHS_EN.get(month_name)
     if not mnum:
         return None
     return y, mnum, d1, d2
 
 
-def _parse_pt_range(text: str) -> Tuple[int, int, int, int] | None:
+def _normalize_pt_month(name: str) -> str:
+    name = name.lower()
+    return (
+        name.replace("ç", "c")
+        .replace("ã", "a")
+        .replace("á", "a")
+        .replace("à", "a")
+        .replace("â", "a")
+        .replace("é", "e")
+        .replace("ê", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ô", "o")
+        .replace("õ", "o")
+        .replace("ú", "u")
+    )
+
+
+def _parse_pt_range(text: str, forced_year: int | None) -> Tuple[int, int, int, int] | None:
     """
     Parse Portuguese range:
       '23 a 26 de abril de 2026'
       '23-26 de abril de 2026'
       '23 – 26 de abril de 2026'
+    If forced_year is provided, override the parsed year with it.
     """
     m = re.search(
         r"\b(\d{1,2})\s*(?:a|à|[-–])\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+)\s*de\s*(20\d{2})\b",
@@ -123,31 +144,20 @@ def _parse_pt_range(text: str) -> Tuple[int, int, int, int] | None:
     d2 = int(m.group(2))
     month_name = m.group(3).lower()
     y = int(m.group(4))
-    # normalize common accents
-    month_name_norm = (
-        month_name.replace("ç", "c")
-        .replace("ã", "a")
-        .replace("á", "a")
-        .replace("à", "a")
-        .replace("â", "a")
-        .replace("é", "e")
-        .replace("ê", "e")
-        .replace("í", "i")
-        .replace("ó", "o")
-        .replace("ô", "o")
-        .replace("õ", "o")
-        .replace("ú", "u")
-    )
+    if forced_year is not None:
+        y = forced_year
+    month_name_norm = _normalize_pt_month(month_name)
     mnum = MONTHS_PT.get(month_name) or MONTHS_PT.get(month_name_norm)
     if not mnum:
         return None
     return y, mnum, d1, d2
 
 
-def _parse_pt_deadline(text: str) -> Tuple[int, int, int] | None:
+def _parse_pt_deadline(text: str, forced_year: int | None) -> Tuple[int, int, int] | None:
     """
     Parse Portuguese deadline:
       '... até 30 de janeiro de 2026'
+    If forced_year is provided, override the parsed year with it.
     """
     m = re.search(
         r"\bat[eé]\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+)\s*de\s*(20\d{2})\b",
@@ -159,24 +169,43 @@ def _parse_pt_deadline(text: str) -> Tuple[int, int, int] | None:
     d = int(m.group(1))
     month_name = m.group(2).lower()
     y = int(m.group(3))
-    month_name_norm = (
-        month_name.replace("ç", "c")
-        .replace("ã", "a")
-        .replace("á", "a")
-        .replace("à", "a")
-        .replace("â", "a")
-        .replace("é", "e")
-        .replace("ê", "e")
-        .replace("í", "i")
-        .replace("ó", "o")
-        .replace("ô", "o")
-        .replace("õ", "o")
-        .replace("ú", "u")
-    )
+    if forced_year is not None:
+        y = forced_year
+    month_name_norm = _normalize_pt_month(month_name)
     mnum = MONTHS_PT.get(month_name) or MONTHS_PT.get(month_name_norm)
     if not mnum:
         return None
     return y, mnum, d
+
+
+def _parse_br_slash_deadlines(text: str, forced_year: int | None) -> List[Tuple[int, int, int]]:
+    """
+    Parse table-style deadlines:
+      'Até 08/02/26'
+      'Até 12/04/26'
+    Returns a list of (y, m, d).
+    """
+    dates: List[Tuple[int, int, int]] = []
+
+    for m in re.finditer(
+        r"at[eé]\s*(\d{1,2})/(\d{1,2})/(\d{2,4})",
+        text,
+        flags=re.IGNORECASE,
+    ):
+        d = int(m.group(1))
+        mm = int(m.group(2))
+        yy_raw = m.group(3)
+        if len(yy_raw) == 2:
+            y = 2000 + int(yy_raw)
+        else:
+            y = int(yy_raw)
+        if forced_year is not None:
+            y = forced_year
+        dates.append((y, mm, d))
+
+    # dedup
+    unique = sorted(set(dates), key=lambda t: (t[0], t[1], t[2]))
+    return unique
 
 
 def _best_future_congress(candidates: List[Tuple[int, int, int, int]]) -> Tuple[int, int, int, int] | None:
@@ -209,24 +238,33 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
     """
     Scrape a single COPA edition site.
     Strategy:
+      - detect edition year from the hostname/path (e.g. copa2026.saesp.org.br)
       - fetch the configured URL
       - also fetch /temas-livres/ on the same host (Portuguese key info lives there)
-      - parse congress range (prefer PT)
+      - parse congress range (PT and EN, but force year to match edition)
       - parse abstracts deadline (PT)
+      - parse registration deadlines from dd/mm/yy table ('Até 08/02/26', 'Até 12/04/26')
     """
     warnings: List[str] = []
     events: List[Dict[str, Any]] = []
 
-    pages_to_try = [base_url]
-
-    # Try to build the Portuguese page on the same host
-    temas_url = urljoin(base_url.rstrip("/") + "/", "../temas-livres/")
-    # urljoin above can behave oddly depending on trailing slashes; force a sane path:
-    # If base_url is https://copa2026.saesp.org.br/en/
-    # we want https://copa2026.saesp.org.br/temas-livres/
+    # Detect edition year from URL (host or path)
+    host_root = None
     m_host = re.match(r"^(https?://[^/]+)", base_url.strip())
     if m_host:
-        temas_url = m_host.group(1).rstrip("/") + "/temas-livres/"
+        host_root = m_host.group(1)
+
+    m_year = re.search(r"20\d{2}", base_url)
+    forced_year: int | None = int(m_year.group(0)) if m_year else None
+
+    # Build Portuguese "temas-livres" URL on same host
+    if host_root:
+        temas_url = host_root.rstrip("/") + "/temas-livres/"
+    else:
+        temas_url = urljoin(base_url.rstrip("/") + "/", "../temas-livres/")
+
+    pages_to_try = [base_url]
+    if temas_url not in pages_to_try:
         pages_to_try.append(temas_url)
 
     fetched_blocks: List[Tuple[str, str]] = []
@@ -247,11 +285,10 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
     congress_snippets: List[Tuple[str, str]] = []
 
     for u, text in fetched_blocks:
-        # Prefer PT range if present
-        pt = _parse_pt_range(text)
+        # PT range
+        pt = _parse_pt_range(text, forced_year)
         if pt:
             congress_candidates.append(pt)
-            # Keep a small evidence snippet around the first match
             m = re.search(
                 r"(\d{1,2}\s*(?:a|à|[-–])\s*\d{1,2}\s*de\s*[A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+\s*de\s*20\d{2})",
                 text,
@@ -260,7 +297,8 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
             if m:
                 congress_snippets.append((u, m.group(1)))
 
-        en = _parse_en_range(text)
+        # EN range (fallback)
+        en = _parse_en_range(text, forced_year)
         if en:
             congress_candidates.append(en)
             m = re.search(
@@ -312,24 +350,22 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
         }
     )
 
-    # Abstract deadline: only from PT deadline pattern (the snippet you gave)
+    # Abstract deadline: PT phrase "Submeta seu trabalho até 30 de janeiro de 2026"
     deadline_found = None
     deadline_evidence = None
     for u, text in fetched_blocks:
-        dl = _parse_pt_deadline(text)
+        dl = _parse_pt_deadline(text, forced_year)
         if dl:
             y, m, d = dl
             deadline_found = _ymd(y, m, d)
-            # Capture a compact evidence snippet
             m_ev = re.search(
-                r"(submeta\s+seu\s+trabalho[^<]{0,120}?\bat[eé]\s*\d{1,2}\s*de\s*[A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+\s*de\s*20\d{2})",
+                r"(submeta\s+seu\s+trabalho[^<]{0,160}?\bat[eé]\s*\d{1,2}\s*de\s*[A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+\s*de\s*20\d{2})",
                 text,
                 flags=re.IGNORECASE,
             )
             if m_ev:
                 deadline_evidence = (u, m_ev.group(1))
             else:
-                # fallback: any "... até DD de mês de YYYY"
                 m_ev2 = re.search(
                     r"(\bat[eé]\s*\d{1,2}\s*de\s*[A-Za-zçÇãÃõÕéÉíÍóÓúÚ]+\s*de\s*20\d{2})",
                     text,
@@ -347,14 +383,14 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
                 "type": "abstract_deadline",
                 "date": deadline_found,
                 "location": location,
-                "link": temas_url if m_host else base_url,
+                "link": temas_url if host_root else base_url,
                 "priority": 6,
                 "title": {
                     "en": f"COPA SAESP {year} — Abstract submission deadline",
                     "pt": f"COPA SAESP {year} — Prazo final de submissão de trabalhos",
                 },
                 "evidence": {
-                    "url": deadline_evidence[0] if deadline_evidence else (temas_url if m_host else base_url),
+                    "url": deadline_evidence[0] if deadline_evidence else (temas_url if host_root else base_url),
                     "snippet": deadline_evidence[1] if deadline_evidence else deadline_found,
                     "field": "abstract_deadline_snippet",
                 },
@@ -364,10 +400,65 @@ def _scrape_one_edition(base_url: str) -> Tuple[List[Dict[str, Any]], List[str]]
     else:
         warnings.append(f"[COPA] Could not find abstracts deadline snippet on edition pages. ({SCRAPER_VERSION})")
 
+    # Registration deadlines from 'Até 08/02/26' and 'Até 12/04/26'
+    br_dates: List[Tuple[int, int, int]] = []
+    for _, text in fetched_blocks:
+        br_dates.extend(_parse_br_slash_deadlines(text, forced_year))
+
+    br_dates = sorted(set(br_dates), key=lambda t: (t[0], t[1], t[2]))
+
+    early_reg_date = None
+    late_reg_date = None
+    if br_dates:
+        if len(br_dates) == 1:
+            late_reg_date = br_dates[0]
+        else:
+            early_reg_date = br_dates[0]
+            late_reg_date = br_dates[-1]
+
+    if early_reg_date:
+        y, m, d = early_reg_date
+        events.append(
+            {
+                "series": "COPA",
+                "year": year,
+                "type": "early_bird_deadline",
+                "date": _ymd(y, m, d),
+                "location": location,
+                "link": base_url,
+                "priority": 5,
+                "title": {
+                    "en": f"COPA SAESP {year} — Early registration deadline",
+                    "pt": f"COPA SAESP {year} — Prazo para inscrição antecipada",
+                },
+                "source": "scraped",
+            }
+        )
+
+    if late_reg_date:
+        y, m, d = late_reg_date
+        events.append(
+            {
+                "series": "COPA",
+                "year": year,
+                "type": "registration_deadline",
+                "date": _ymd(y, m, d),
+                "location": location,
+                "link": base_url,
+                "priority": 5,
+                "title": {
+                    "en": f"COPA SAESP {year} — Late registration deadline",
+                    "pt": f"COPA SAESP {year} — Prazo para inscrição tardia",
+                },
+                "source": "scraped",
+            }
+        )
+
     warnings.append(
         f"[COPA DEBUG] base={base_url} pages={len(fetched_blocks)} "
         f"congress_found=True abstract_deadline={'yes' if deadline_found else 'no'} "
-        f"picked={start_date}..{end_date} ({SCRAPER_VERSION})"
+        f"br_deadlines={len(br_dates)} picked={start_date}..{end_date} "
+        f"forced_year={forced_year} ({SCRAPER_VERSION})"
     )
 
     return events, warnings
