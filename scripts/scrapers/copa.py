@@ -208,7 +208,6 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
         warnings.append(
             f"[COPA] Could not parse abstract deadline phrase "
             f\"'Submeta seu trabalho até ...' on {url}. (v2026-01-19j)\"
-        )
 
     # ----------------- 3) Registration deadlines (table 'Até 08/02/26', etc.) -----------------
 
