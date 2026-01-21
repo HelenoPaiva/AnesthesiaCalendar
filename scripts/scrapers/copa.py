@@ -11,7 +11,7 @@
 #   * No automatic year window probing; we only scrape the URLs given
 #     in data/sources.json.
 #   * Year-agnostic: patterns don't hard-code 2026, so when you switch
-#     the URL to copa2027.saesp.org.br/temas-livres/ it should still work
+#     the URL to copa20XX.saesp.org.br/temas-livres/ it should still work
 #     if they keep the same structure.
 
 from __future__ import annotations
@@ -20,12 +20,13 @@ import re
 from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
 
+
 # PT-BR month names -> month number
 MONTHS_PT = {
     "janeiro": 1,
     "fevereiro": 2,
     "março": 3,
-    "marco": 3,   # just in case accents vanish
+    "marco": 3,  # just in case accents vanish
     "abril": 4,
     "maio": 5,
     "junho": 6,
@@ -56,10 +57,13 @@ def _ymd(y: int, m: int, d: int) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
-def _parse_pt_range(text: str) -> Tuple[int | None, int | None, int | None, int | None, str | None]:
+def _parse_pt_range(
+    text: str,
+) -> Tuple[int | None, int | None, int | None, int | None, str | None]:
     """
     Parse a PT-BR date range like:
       "23 a 26 de abril de 2026"
+
     Returns (year, month, day_start, day_end, snippet) or (None, ...).
     """
     m = re.search(
@@ -82,10 +86,13 @@ def _parse_pt_range(text: str) -> Tuple[int | None, int | None, int | None, int 
     return year, month, d1, d2, m.group(0)
 
 
-def _parse_pt_single(text: str, pattern: str) -> Tuple[int | None, int | None, int | None, str | None]:
+def _parse_pt_single(
+    text: str, pattern: str
+) -> Tuple[int | None, int | None, int | None, str | None]:
     """
     Generic helper to parse PT-BR single dates like:
       "Submeta seu trabalho até 30 de janeiro de 2026"
+
     'pattern' should have one capture group with the date string.
     """
     m = re.search(pattern, text, flags=re.IGNORECASE)
@@ -93,7 +100,11 @@ def _parse_pt_single(text: str, pattern: str) -> Tuple[int | None, int | None, i
         return None, None, None, None
 
     date_str = m.group(1).strip()
-    dm = re.match(r"(\d{1,2})\s+de\s+([A-Za-zçãéôíúáõ]+)\s+de\s+(20\d{2})", date_str, flags=re.IGNORECASE)
+    dm = re.match(
+        r"(\d{1,2})\s+de\s+([A-Za-zçãéôíúáõ]+)\s+de\s+(20\d{2})",
+        date_str,
+        flags=re.IGNORECASE,
+    )
     if not dm:
         return None, None, None, date_str
 
@@ -115,7 +126,7 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
     try:
         html = _fetch(url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[COPA] Failed to fetch {url}: {e} (v2026-01-19j)"]
+        return [], [f"[COPA] Failed to fetch {url}: {e} (v2026-01-19k)"]
 
     # Flatten whitespace so regex can span lines and tags
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
@@ -160,8 +171,8 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
     else:
         warnings.append(
-            "[COPA] Could not parse congress date range like '23 a 26 de abril de 20XX' "
-            f"on {url}. (v2026-01-19j)"
+            "[COPA] Could not parse congress date range like "
+            f"'23 a 26 de abril de 20XX' on {url}. (v2026-01-19k)"
         )
 
     # Fallback congress_year for deadlines (if parsing failed we try to rescue year from URL)
@@ -206,8 +217,9 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
     else:
         warnings.append(
-            f"[COPA] Could not parse abstract deadline phrase "
-            f\"'Submeta seu trabalho até ...' on {url}. (v2026-01-19j)\"
+            "[COPA] Could not parse abstract deadline phrase "
+            f"'Submeta seu trabalho até ...' on {url}. (v2026-01-19k)"
+        )
 
     # ----------------- 3) Registration deadlines (table 'Até 08/02/26', etc.) -----------------
 
@@ -225,19 +237,42 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
     regs.sort()
 
     # Map first to early-bird, second to general registration, others to "other_deadline"
-    labels = []
+    labels: List[Tuple[str, str, str]] = []
     if regs:
-        labels.append(("early_bird_deadline", "Early registration deadline", "Prazo de inscrição antecipada"))
+        labels.append(
+            (
+                "early_bird_deadline",
+                "Early registration deadline",
+                "Prazo de inscrição antecipada",
+            )
+        )
     if len(regs) >= 2:
-        labels.append(("registration_deadline", "Registration deadline", "Prazo de inscrição"))
+        labels.append(
+            (
+                "registration_deadline",
+                "Registration deadline",
+                "Prazo de inscrição",
+            )
+        )
     if len(regs) > 2:
         for _ in regs[2:]:
-            labels.append(("other_deadline", "Registration deadline", "Prazo de inscrição"))
+            labels.append(
+                (
+                    "other_deadline",
+                    "Registration deadline",
+                    "Prazo de inscrição",
+                )
+            )
 
     year_for_regs = congress_year or (abs_year if abs_year else None)
 
     for iso, (etype, tail_en, tail_pt) in zip(regs, labels):
         y_for_event = year_for_regs or int(iso[:4])
+        # Human-readable snippet approximating the original table label
+        dd = iso[8:10]
+        mm = iso[5:7]
+        yy2 = iso[2:4]
+
         events.append(
             {
                 "series": "COPA",
@@ -253,7 +288,7 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
                 },
                 "evidence": {
                     "url": url,
-                    "snippet": f"Até {iso[8:10]}/{iso[5:7]}/{str(y_for_event)[2:]}",
+                    "snippet": f"Até {dd}/{mm}/{yy2}",
                     "field": "registration_table_pt",
                 },
                 "source": "scraped",
@@ -261,9 +296,10 @@ def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
         )
 
     warnings.append(
-        f"[COPA DEBUG] url={url} congress_found={congress_found} "
+        "[COPA DEBUG] url="
+        f"{url} congress_found={congress_found} "
         f"abstract_found={bool(abs_year and abs_month and abs_day)} "
-        f"reg_dates={regs} (v2026-01-19j)"
+        f"reg_dates={regs} (v2026-01-19k)"
     )
 
     return events, warnings
@@ -287,7 +323,7 @@ def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     urls = cfg.get("urls") or []
     if not urls:
-        return [], ["[COPA] No URLs configured in data/sources.json. (v2026-01-19j)"]
+        return [], ["[COPA] No URLs configured in data/sources.json. (v2026-01-19k)"]
 
     all_events: List[Dict[str, Any]] = []
     all_warnings: List[str] = []
@@ -300,8 +336,8 @@ def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     if not all_events:
         all_warnings.append(
             "[COPA] No events produced from configured COPA URLs "
-            "(site structure may have changed). (v2026-01-19j)"
+            "(site structure may have changed). (v2026-01-19k)"
         )
 
-    all_warnings.append("[COPA DEBUG] scraper version v2026-01-19j")
+    all_warnings.append("[COPA DEBUG] scraper version v2026-01-19k")
     return all_events, all_warnings
