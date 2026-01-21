@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-21T11:32:55+00:00",
+  "generated_at": "2026-01-21T12:08:12+00:00",
   "events": [
     {
       "series": "ASA",
@@ -225,44 +225,44 @@
     },
     {
       "series": "COPA",
-      "year": 2025,
-      "type": "congress",
-      "start_date": "2025-04-24",
-      "end_date": "2025-04-27",
-      "location": "Transamerica Expo Center, São Paulo, Brazil",
-      "link": "https://copa2026.saesp.org.br/",
-      "priority": 8,
-      "title": {
-        "en": "COPA 2025 — Paulista Congress of Anesthesiology",
-        "pt": "COPA 2025 — Congresso Paulista de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "24 a 27 de abril de 2025",
-        "field": "congress_range_pt"
-      },
-      "source": "scraped",
-      "id": "copa-2025-congress-3da816dc92"
-    },
-    {
-      "series": "COPA",
-      "year": 2025,
+      "year": 2026,
       "type": "abstract_deadline",
       "date": "2026-01-30",
       "location": "Transamerica Expo Center, São Paulo, Brazil",
       "link": "https://copa2026.saesp.org.br/temas-livres/",
       "priority": 8,
       "title": {
-        "en": "COPA 2025 — Abstract submission deadline",
-        "pt": "COPA 2025 — Prazo para submissão de temas livres"
+        "en": "COPA 2026 — Abstract submission deadline",
+        "pt": "COPA 2026 — Prazo para submissão de temas livres"
       },
       "evidence": {
         "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "30 de janeiro de 2026",
+        "snippet": "Submeta seu trabalho até 30 de janeiro de 2026",
         "field": "abstract_deadline_pt"
       },
       "source": "scraped",
-      "id": "copa-2025-abstract_deadline-44d1dc79b6"
+      "id": "copa-2026-abstract_deadline-b12428445d"
+    },
+    {
+      "series": "COPA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-04-23",
+      "end_date": "2026-04-26",
+      "location": "Transamerica Expo Center, São Paulo, Brazil",
+      "link": "https://copa2026.saesp.org.br/temas-livres/",
+      "priority": 8,
+      "title": {
+        "en": "COPA 2026 — Paulista Congress of Anesthesiology",
+        "pt": "COPA 2026 — Congresso Paulista de Anestesiologia"
+      },
+      "evidence": {
+        "url": "https://copa2026.saesp.org.br/temas-livres/",
+        "snippet": "23 a 26 de abril de 2026",
+        "field": "congress_range_pt"
+      },
+      "source": "scraped",
+      "id": "copa-2026-congress-3296d0e6c9"
     },
     {
       "series": "EUROANAESTHESIA",
