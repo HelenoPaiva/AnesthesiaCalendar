@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
 
 
+VERSION = "v2026-01-19d"
+
 # Portuguese month names used on the SBA / CBA site
 MONTHS_PT = {
     "janeiro": 1,
@@ -45,9 +47,9 @@ def _ymd(y: int, m: int, d: int) -> str:
 
 def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
-    Year-agnostic CBA scraper (v2026-01-19c).
+    Year-agnostic CBA scraper (VERSION).
 
-    Expected HTML structure (as in https://www.sbahq.org/agenda/congresso-brasileiro-de-anestesiologia/):
+    Target structure (e.g. https://www.sbahq.org/agenda/congresso-brasileiro-de-anestesiologia/):
 
         <h1 class="page-title">Congresso Brasileiro de Anestesiologia</h1>
         <div id="programa">
@@ -56,56 +58,59 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             <div class="local"><i class="icon local"></i>Fortaleza - CE</div>
             <div class="local"><i class="icon2 presencial"></i>Presencial</div>
             <div class="envent-action">
-              <div class="inscreva-se inscreva-se1 mt-2">
-                <a href="https://www.cba2026.com.br/" class="btn btn-primary"> Inscreva-se</a>
-              </div>
-              <div class="inscreva-se mt-2">
-                <a target="_blank" href="https://www.cba2026.com.br/" class="btn btn-outline-primary">Site</a>
-              </div>
+              <a href="https://www.cba2026.com.br/" ...>Inscreva-se</a>
+              <a href="https://www.cba2026.com.br/" ...>Site</a>
             </div>
           </div>
         </div>
-
-    Strategy:
-      - Use cfg["urls"][0] (should ideally be the agenda URL).
-      - Find the block starting at the "page-title" for CBA.
-      - Within that block:
-          - Extract date range "dd a dd de <mês> de 20xx".
-          - Extract location from the first "local" div.
-          - Extract a CBA site link from Inscreva-se/Site buttons.
-      - Return a single congress event for CBA {year}.
     """
     warnings: List[str] = []
 
     urls = cfg.get("urls") or []
     if not urls:
-        return [], ["[CBA] No URLs configured in sources.json. (v2026-01-19c)"]
+        return [], [f"[CBA] No URLs configured in sources.json. ({VERSION})"]
 
     base_url = urls[0]
 
     try:
         html = _fetch(base_url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[CBA] Failed to fetch {base_url}: {e} (v2026-01-19c)"]
+        return [], [f"[CBA] Failed to fetch {base_url}: {e} ({VERSION})"]
 
     # ------------------------------------------------------------------
-    # 1) Narrow down to the CBA agenda block
+    # 1) Locate the <h1> page title for CBA in a tolerant way:
+    #    - class contains "page-title"
+    #    - inner text contains "Congresso Brasileiro de Anestesiologia"
     # ------------------------------------------------------------------
-    lower_html = html.lower()
-    anchor = 'page-title">congresso brasileiro de anestesiologia'
-    idx = lower_html.find(anchor)
-    if idx == -1:
+    title_pattern = re.compile(
+        r'(<h1[^>]*class="[^"]*page-title[^"]*"[^>]*>.*?Congresso\s+Brasileiro\s+de\s+Anestesiologia.*?</h1>)(.{0,3000})',
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    m_title = title_pattern.search(html)
+    if not m_title:
+        # As a fallback, try to show a small snippet around the plain-text phrase,
+        # if it exists at all, to help debug.
+        low = html.lower()
+        phrase = "congresso brasileiro de anestesiologia"
+        idx = low.find(phrase)
+        if idx != -1:
+            snippet = re.sub(r"\s+", " ", html[max(0, idx - 100) : idx + 200])
+            warnings.append(
+                f"[CBA DEBUG] fallback_snippet='{snippet[:200]}' ({VERSION})"
+            )
         warnings.append(
-            "[CBA] Could not locate 'Congresso Brasileiro de Anestesiologia' page-title block. (v2026-01-19c)"
+            f"[CBA] Could not locate <h1 ... page-title> for 'Congresso Brasileiro de Anestesiologia'. ({VERSION})"
         )
         return [], warnings
 
-    # Take a reasonably large window after the anchor
-    block = html[idx : idx + 4000]
-    block_flat = re.sub(r"\s+", " ", block, flags=re.DOTALL)
+    title_html = m_title.group(1)
+    tail_html = m_title.group(2)
+    block_html = title_html + tail_html
+    block_flat = re.sub(r"\s+", " ", block_html, flags=re.DOTALL)
 
     warnings.append(
-        f"[CBA DEBUG] block_sample='{block_flat[:200]}' (v2026-01-19c)"
+        f"[CBA DEBUG] block_sample='{block_flat[:200]}' ({VERSION})"
     )
 
     # ------------------------------------------------------------------
@@ -119,7 +124,7 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
 
     if not m_date:
         warnings.append(
-            "[CBA] Could not parse CBA date range in agenda block. (v2026-01-19c)"
+            f"[CBA] Could not parse CBA date range in agenda block. ({VERSION})"
         )
         return [], warnings
 
@@ -131,7 +136,7 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     month_num = MONTHS_PT.get(month_name)
     if not month_num:
         warnings.append(
-            f"[CBA] Unknown month name in CBA date range: '{month_name}' (v2026-01-19c)"
+            f"[CBA] Unknown month name in CBA date range: '{month_name}'. ({VERSION})"
         )
         return [], warnings
 
@@ -139,22 +144,36 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     end_date = _ymd(year, month_num, d2)
 
     # ------------------------------------------------------------------
-    # 3) Extract location: <div class="local"><i class="icon local"></i>Fortaleza - CE</div>
+    # 3) Extract location.
+    #    Prefer strict pattern with icon local; if that fails, fallback to any 'local' div.
     # ------------------------------------------------------------------
-    m_loc = re.search(
+    m_loc_strict = re.search(
         r'<div\s+class="local">\s*<i[^>]*class="icon\s+local"[^>]*></i>\s*([^<]+)</div>',
-        block,
+        block_html,
         flags=re.IGNORECASE,
     )
-    location = m_loc.group(1).strip() if m_loc else "Brasil"
+    location = None
+    if m_loc_strict:
+        location = m_loc_strict.group(1).strip()
+    else:
+        m_loc_any = re.search(
+            r'<div\s+class="local">([^<]+)</div>',
+            block_html,
+            flags=re.IGNORECASE,
+        )
+        if m_loc_any:
+            location = m_loc_any.group(1).strip()
+
+    if not location:
+        location = "Brasil"
 
     # ------------------------------------------------------------------
-    # 4) Extract CBA site link from Inscreva-se / Site buttons
+    # 4) Extract CBA site link from Inscreva-se / Site buttons.
     # ------------------------------------------------------------------
     link = base_url
     m_link = re.search(
-        r'href="([^"]+)"[^>]*>(?:\s*Inscreva-se|\s*Site)',
-        block,
+        r'href="([^"]+)"[^>]*>\s*(?:Inscreva-se|Site)\s*</a>',
+        block_html,
         flags=re.IGNORECASE,
     )
     if m_link:
@@ -164,8 +183,6 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         elif raw_href.startswith("http://") or raw_href.startswith("https://"):
             link = raw_href
         elif raw_href.startswith("/"):
-            # assume same host as base_url
-            # crude host extraction
             host_match = re.match(r"(https?://[^/]+)", base_url)
             host = host_match.group(1) if host_match else "https://www.sbahq.org"
             link = host + raw_href
@@ -176,9 +193,9 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
                 link = raw_href
 
     warnings.append(
-        f"[CBA DEBUG] parsed_range={start_date}..{end_date} location='{location}' link='{link}' (v2026-01-19c)"
+        f"[CBA DEBUG] parsed_range={start_date}..{end_date} location='{location}' link='{link}' ({VERSION})"
     )
-    warnings.append("[CBA DEBUG] scraper version v2026-01-19c")
+    warnings.append(f"[CBA DEBUG] scraper version {VERSION}")
 
     events: List[Dict[str, Any]] = [
         {
