@@ -1,32 +1,18 @@
 # scripts/scrapers/copa.py
-#
-# COPA SAESP – Paulista Congress of Anesthesiology
-# Scrapes the official "temas-livres" page for:
-#   - Congress date range  (e.g. "23 a 26 de abril de 2026")
-#   - Abstract deadline    (e.g. "Submeta seu trabalho até 30 de janeiro de 2026")
-#   - Registration dates   (e.g. "Até 08/02/26", "Até 12/04/26")
-#
-# Design principles:
-#   * TRUST ONLY VISIBLE PT-BR TEXT, NEVER SEO/META TAGS (they are wrong).
-#   * No automatic year window probing; we only scrape the URLs given
-#     in data/sources.json.
-#   * Year-agnostic: patterns don't hard-code 2026, so when you switch
-#     the URL to copa20XX.saesp.org.br/temas-livres/ it should still work
-#     if they keep the same structure.
-
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 
-# PT-BR month names -> month number
+# Portuguese month names
 MONTHS_PT = {
     "janeiro": 1,
     "fevereiro": 2,
-    "março": 3,
-    "marco": 3,  # just in case accents vanish
+    "marco": 3, "março": 3,
     "abril": 4,
     "maio": 5,
     "junho": 6,
@@ -40,7 +26,7 @@ MONTHS_PT = {
 
 
 def _fetch(url: str) -> str:
-    """HTTP GET with a realistic User-Agent."""
+    """HTTP GET with a reasonable User-Agent."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (compatible; AnesthesiaCalendarBot/1.0; "
@@ -48,7 +34,7 @@ def _fetch(url: str) -> str:
         )
     }
     req = Request(url, headers=headers)
-    with urlopen(req, timeout=20) as resp:  # nosec - runs in GitHub Actions sandbox
+    with urlopen(req, timeout=20) as resp:  # nosec - GitHub Actions sandbox
         raw = resp.read()
     return raw.decode("utf-8", errors="ignore")
 
@@ -57,22 +43,19 @@ def _ymd(y: int, m: int, d: int) -> str:
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
-def _parse_pt_range(
-    text: str,
-) -> Tuple[int | None, int | None, int | None, int | None, str | None]:
+def _parse_pt_range(date_str: str) -> Tuple[int | None, int | None, int | None, int | None]:
     """
-    Parse a PT-BR date range like:
-      "23 a 26 de abril de 2026"
+    Parse '23 a 26 de abril de 2026' style ranges.
 
-    Returns (year, month, day_start, day_end, snippet) or (None, ...).
+    Returns (year, month, day_start, day_end) or (None, None, None, None).
     """
     m = re.search(
-        r"(\d{1,2})\s*a\s*(\d{1,2})\s*de\s+([A-Za-zçãéôíúáõ]+)\s+de\s+(20\d{2})",
-        text,
+        r"(\d{1,2})\s*(?:a|à|–|-)\s*(\d{1,2})\s+de\s+([A-Za-zçãéíóúãõ]+)\s+de\s+(20\d{2})",
+        date_str,
         flags=re.IGNORECASE,
     )
     if not m:
-        return None, None, None, None, None
+        return None, None, None, None
 
     d1 = int(m.group(1))
     d2 = int(m.group(2))
@@ -81,263 +64,185 @@ def _parse_pt_range(
 
     month = MONTHS_PT.get(month_name)
     if not month:
-        return year, None, d1, d2, m.group(0)
-
-    return year, month, d1, d2, m.group(0)
-
-
-def _parse_pt_single(
-    text: str, pattern: str
-) -> Tuple[int | None, int | None, int | None, str | None]:
-    """
-    Generic helper to parse PT-BR single dates like:
-      "Submeta seu trabalho até 30 de janeiro de 2026"
-
-    'pattern' should have one capture group with the date string.
-    """
-    m = re.search(pattern, text, flags=re.IGNORECASE)
-    if not m:
         return None, None, None, None
 
-    date_str = m.group(1).strip()
-    dm = re.match(
-        r"(\d{1,2})\s+de\s+([A-Za-zçãéôíúáõ]+)\s+de\s+(20\d{2})",
+    return year, month, d1, d2
+
+
+def _parse_pt_date(date_str: str) -> Tuple[int | None, int | None, int | None]:
+    """
+    Parse '30 de janeiro de 2026' style dates.
+
+    Returns (year, month, day) or (None, None, None).
+    """
+    m = re.search(
+        r"(\d{1,2})\s+de\s+([A-Za-zçãéíóúãõ]+)\s+de\s+(20\d{2})",
         date_str,
         flags=re.IGNORECASE,
     )
-    if not dm:
-        return None, None, None, date_str
+    if not m:
+        return None, None, None
 
-    day = int(dm.group(1))
-    month_name = dm.group(2).lower()
-    year = int(dm.group(3))
+    d = int(m.group(1))
+    month_name = m.group(2).lower()
+    year = int(m.group(3))
 
     month = MONTHS_PT.get(month_name)
     if not month:
-        return year, None, day, date_str
+        return None, None, None
 
-    return year, month, day, date_str
+    return year, month, d
 
 
-def _scrape_temasinlivres(url: str) -> Tuple[List[Dict[str, Any]], List[str]]:
+def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """
+    Scraper for COPA (Congresso Paulista de Anestesiologia).
+
+    IMPORTANT:
+      - Only uses the visible PT-BR text on the 'temas-livres' page.
+      - Ignores SEO/meta tags completely (they are wrong for 2026).
+      - Rejects any dates whose year is < current UTC year.
+    """
     warnings: List[str] = []
-    events: List[Dict[str, Any]] = []
+    urls = cfg.get("urls") or []
+    if not urls:
+        return [], ["[COPA] No URLs configured in sources.json. (v2026-01-19j)"]
+
+    target_url = urls[0]
 
     try:
-        html = _fetch(url)
+        html = _fetch(target_url)
+    except (HTTPError, URLError) as e:
+        return [], [f"[COPA] Failed to fetch {target_url}: {e} (v2026-01-19j)"]
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[COPA] Failed to fetch {url}: {e} (v2026-01-19k)"]
+        return [], [f"[COPA] Failed to fetch {target_url}: {e} (v2026-01-19j)"]
 
-    # Flatten whitespace so regex can span lines and tags
+    # Flatten whitespace so patterns can span tags/newlines
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
 
-    # Derive a nicer base link for the congress (root site for that year)
-    # e.g. https://copa2026.saesp.org.br/temas-livres/ -> https://copa2026.saesp.org.br/
-    m_base = re.match(r"^(https?://[^/]+/)", url)
-    base_link = m_base.group(1) if m_base else url
+    now_year = datetime.utcnow().year
+    events: List[Dict[str, Any]] = []
 
-    # ----------------- 1) Congress date range -----------------
-
-    year, month, d1, d2, snippet = _parse_pt_range(text)
+    # ------------------------------------------------------------------
+    # 1) Congress date range — from visible PT text:
+    #    "23 a 26 de abril de 2026"
+    # ------------------------------------------------------------------
+    range_re = re.compile(
+        r"(\d{1,2}\s*(?:a|à|–|-)\s*\d{1,2}\s+de\s+[A-Za-zçãéíóúãõ]+\s+de\s+20\d{2})",
+        re.IGNORECASE,
+    )
     congress_found = False
+    congress_year: int | None = None
 
-    if year and month and d1 and d2:
-        congress_found = True
+    range_candidates: List[Tuple[str, int, int, int, int]] = []
 
-        start_date = _ymd(year, month, d1)
-        end_date = _ymd(year, month, d2)
+    for m in range_re.finditer(text):
+        raw = m.group(1)
+        y, month, d1, d2 = _parse_pt_range(raw)
+        if not y or not month or not d1 or not d2:
+            continue
+        # Auto-refuse any past year (e.g., 2025) as requested
+        if y < now_year:
+            continue
+        range_candidates.append((raw, y, month, d1, d2))
+
+    if range_candidates:
+        # Choose the earliest start date among candidate future ranges
+        def _sort_key(item: Tuple[str, int, int, int, int]) -> str:
+            _, y, m, d1, _ = item
+            return _ymd(y, m, d1)
+
+        range_candidates.sort(key=_sort_key)
+        raw, y, month, d1, d2 = range_candidates[0]
+        start_date = _ymd(y, month, d1)
+        end_date = _ymd(y, month, d2)
 
         events.append(
             {
                 "series": "COPA",
-                "year": year,
+                "year": y,
                 "type": "congress",
                 "start_date": start_date,
                 "end_date": end_date,
                 "location": "Transamerica Expo Center, São Paulo, Brazil",
-                "link": base_link,
+                "link": target_url,
                 "priority": 8,
                 "title": {
-                    "en": f"COPA {year} — Paulista Congress of Anesthesiology",
-                    "pt": f"COPA {year} — Congresso Paulista de Anestesiologia",
+                    "en": f"COPA {y} — Paulista Congress of Anesthesiology",
+                    "pt": f"COPA {y} — Congresso Paulista de Anestesiologia",
                 },
                 "evidence": {
-                    "url": url,
-                    "snippet": snippet,
+                    "url": target_url,
+                    "snippet": raw,
                     "field": "congress_range_pt",
                 },
                 "source": "scraped",
             }
         )
+        congress_found = True
+        congress_year = y
     else:
         warnings.append(
-            "[COPA] Could not parse congress date range like "
-            f"'23 a 26 de abril de 20XX' on {url}. (v2026-01-19k)"
+            f"[COPA] Could not locate congress date range like '23 a 26 de abril de 20XX' on {target_url}. (v2026-01-19j)"
         )
 
-    # Fallback congress_year for deadlines (if parsing failed we try to rescue year from URL)
-    congress_year = year
-    if not congress_year:
-        m_year = re.search(r"copa(20\d{2})", url)
-        if m_year:
-            congress_year = int(m_year.group(1))
-
-    # ----------------- 2) Abstract submission deadline -----------------
-
-    # Pattern captures just the date part after "Submeta seu trabalho até "
-    abs_year, abs_month, abs_day, abs_raw = _parse_pt_single(
-        text,
-        r"Submeta seu trabalho até\s+(\d{1,2}\s+de\s+[A-Za-zçãéôíúáõ]+\s+de\s+20\d{2})",
+    # ------------------------------------------------------------------
+    # 2) Abstract deadline — from banner:
+    #    "Atenção! Submeta seu trabalho até 30 de janeiro de 2026"
+    # ------------------------------------------------------------------
+    abstract_found = False
+    abs_re = re.compile(
+        r"Submeta\s+seu\s+trabalho\s+até\s+(\d{1,2}\s+de\s+[A-Za-zçãéíóúãõ]+\s+de\s+20\d{2})",
+        re.IGNORECASE,
     )
+    m_abs = abs_re.search(text)
 
-    if abs_year and abs_month and abs_day:
-        date_ymd = _ymd(abs_year, abs_month, abs_day)
-        y_for_event = congress_year or abs_year
-
-        events.append(
-            {
-                "series": "COPA",
-                "year": y_for_event,
-                "type": "abstract_deadline",
-                "date": date_ymd,
-                "location": "Transamerica Expo Center, São Paulo, Brazil",
-                "link": url,
-                "priority": 8,
-                "title": {
-                    "en": f"COPA {y_for_event} — Abstract submission deadline",
-                    "pt": f"COPA {y_for_event} — Prazo para submissão de temas livres",
-                },
-                "evidence": {
-                    "url": url,
-                    "snippet": abs_raw,
-                    "field": "abstract_deadline_pt",
-                },
-                "source": "scraped",
-            }
-        )
-    else:
-        warnings.append(
-            "[COPA] Could not parse abstract deadline phrase "
-            f"'Submeta seu trabalho até ...' on {url}. (v2026-01-19k)"
-        )
-
-    # ----------------- 3) Registration deadlines (table 'Até 08/02/26', etc.) -----------------
-
-    # Grab all distinct "Até dd/mm/yy" occurrences
-    regs: List[str] = []
-    for m in re.finditer(r"Até\s+(\d{2})/(\d{2})/(\d{2})", text):
-        dd = int(m.group(1))
-        mm = int(m.group(2))
-        yy2 = int(m.group(3))
-        yy = 2000 + yy2  # e.g. 26 -> 2026
-        iso = _ymd(yy, mm, dd)
-        if iso not in regs:
-            regs.append(iso)
-
-    regs.sort()
-
-    # Map first to early-bird, second to general registration, others to "other_deadline"
-    labels: List[Tuple[str, str, str]] = []
-    if regs:
-        labels.append(
-            (
-                "early_bird_deadline",
-                "Early registration deadline",
-                "Prazo de inscrição antecipada",
-            )
-        )
-    if len(regs) >= 2:
-        labels.append(
-            (
-                "registration_deadline",
-                "Registration deadline",
-                "Prazo de inscrição",
-            )
-        )
-    if len(regs) > 2:
-        for _ in regs[2:]:
-            labels.append(
-                (
-                    "other_deadline",
-                    "Registration deadline",
-                    "Prazo de inscrição",
+    if m_abs:
+        raw = m_abs.group(0)
+        date_str = m_abs.group(1)
+        y, month, d = _parse_pt_date(date_str)
+        if y and month and d:
+            if y >= now_year:
+                date_iso = _ymd(y, month, d)
+                year_for_label = congress_year or y
+                events.append(
+                    {
+                        "series": "COPA",
+                        "year": year_for_label,
+                        "type": "abstract_deadline",
+                        "date": date_iso,
+                        "location": "Transamerica Expo Center, São Paulo, Brazil",
+                        "link": target_url,
+                        "priority": 8,
+                        "title": {
+                            "en": f"COPA {year_for_label} — Abstract submission deadline",
+                            "pt": f"COPA {year_for_label} — Prazo para submissão de temas livres",
+                        },
+                        "evidence": {
+                            "url": target_url,
+                            "snippet": raw,
+                            "field": "abstract_deadline_pt",
+                        },
+                        "source": "scraped",
+                    }
                 )
-            )
-
-    year_for_regs = congress_year or (abs_year if abs_year else None)
-
-    for iso, (etype, tail_en, tail_pt) in zip(regs, labels):
-        y_for_event = year_for_regs or int(iso[:4])
-        # Human-readable snippet approximating the original table label
-        dd = iso[8:10]
-        mm = iso[5:7]
-        yy2 = iso[2:4]
-
-        events.append(
-            {
-                "series": "COPA",
-                "year": y_for_event,
-                "type": etype,
-                "date": iso,
-                "location": "Transamerica Expo Center, São Paulo, Brazil",
-                "link": url,
-                "priority": 7,
-                "title": {
-                    "en": f"COPA {y_for_event} — {tail_en}",
-                    "pt": f"COPA {y_for_event} — {tail_pt}",
-                },
-                "evidence": {
-                    "url": url,
-                    "snippet": f"Até {dd}/{mm}/{yy2}",
-                    "field": "registration_table_pt",
-                },
-                "source": "scraped",
-            }
+                abstract_found = True
+    else:
+        warnings.append(
+            f"[COPA] Could not locate 'Submeta seu trabalho até ...' abstract deadline on {target_url}. (v2026-01-19j)"
         )
 
+    # ------------------------------------------------------------------
+    # Debug markers for ledger
+    # ------------------------------------------------------------------
     warnings.append(
-        "[COPA DEBUG] url="
-        f"{url} congress_found={congress_found} "
-        f"abstract_found={bool(abs_year and abs_month and abs_day)} "
-        f"reg_dates={regs} (v2026-01-19k)"
+        f"[COPA DEBUG] url={target_url} congress_found={congress_found} abstract_found={abstract_found} (v2026-01-19j)"
     )
+    warnings.append("[COPA DEBUG] scraper version v2026-01-19j")
+
+    if not events:
+        warnings.append(
+            "[COPA] No events produced from temas-livres page (check HTML structure). (v2026-01-19j)"
+        )
 
     return events, warnings
-
-
-def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
-    """
-    Entry point for the orchestrator.
-
-    cfg in data/sources.json for COPA looks like:
-      {
-        "series": "COPA",
-        "priority": 7,
-        "urls": [
-          "https://copa2026.saesp.org.br/temas-livres/"
-        ]
-      }
-
-    We DO NOT auto-probe other years. If you want the 2027 edition,
-    just update data/sources.json with the new /temas-livres/ URL.
-    """
-    urls = cfg.get("urls") or []
-    if not urls:
-        return [], ["[COPA] No URLs configured in data/sources.json. (v2026-01-19k)"]
-
-    all_events: List[Dict[str, Any]] = []
-    all_warnings: List[str] = []
-
-    for url in urls:
-        ev, w = _scrape_temasinlivres(url)
-        all_events.extend(ev)
-        all_warnings.extend(w)
-
-    if not all_events:
-        all_warnings.append(
-            "[COPA] No events produced from configured COPA URLs "
-            "(site structure may have changed). (v2026-01-19k)"
-        )
-
-    all_warnings.append("[COPA DEBUG] scraper version v2026-01-19k")
-    return all_events, all_warnings
