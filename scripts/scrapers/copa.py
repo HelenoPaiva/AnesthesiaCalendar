@@ -1,7 +1,7 @@
 # scripts/scrapers/copa.py
 #
 # COPA SAESP scraper (year-agnostic, robust, minimal dependencies)
-# Version: v2026-01-19f
+# Version: v2026-01-19g
 #
 # Strategy:
 #   - For a range of years around "now", probe:
@@ -9,12 +9,15 @@
 #   - On each page, look for:
 #       "23 a 26 de abril de 2026"  -> congress date range (pt-BR)
 #       "Submeta seu trabalho até 30 de janeiro de 2026" -> abstract deadline
-#   - No hard dependency on the "tabela-copa" block; registration
-#     deadlines can be added later, but we don't break if the table changes.
+#   - No hard dependency on the "tabela-copa" block.
 #
 #   Produces, for each year where content is found:
 #       - congress (type="congress")
 #       - abstract_deadline (type="abstract_deadline")
+#
+#   After scraping ALL years, we:
+#       - pick a single "active" year (the earliest future congress),
+#       - keep ONLY events for that year (dedup across 2025/2026/etc).
 
 from __future__ import annotations
 
@@ -58,11 +61,10 @@ def _fetch(url: str) -> str:
 
 
 def _try_fetch(url: str) -> str | None:
-    """Fetch but return None on HTTP 4xx/5xx and network errors."""
+    """Fetch but return None on HTTP/network errors."""
     try:
         return _fetch(url)
     except HTTPError as e:
-        # 404, 410, 402 etc => treat as missing
         if 400 <= e.code < 600:
             return None
         return None
@@ -170,7 +172,7 @@ def _scrape_copa_year(year: int, warnings: List[str]) -> List[Dict[str, Any]]:
 
     html = _try_fetch(temas_url)
     if not html:
-        warnings.append(f"[COPA] temas-livres not reachable for {year}: {temas_url} (v2026-01-19f)")
+        warnings.append(f"[COPA] temas-livres not reachable for {year}: {temas_url} (v2026-01-19g)")
         return []
 
     # Flatten whitespace for easier regex matching
@@ -181,7 +183,7 @@ def _scrape_copa_year(year: int, warnings: List[str]) -> List[Dict[str, Any]]:
     abstract_found = False
 
     # ---- Congress range ----
-    # We search near a "23 a 26 de abril de 2026"-like pattern.
+    # Search a "23 a 26 de abril de 2026"-like pattern.
     m_range = re.search(
         r"(\d{1,2}\s*a\s*\d{1,2}\s+de\s+[A-Za-zçãéíóúÁÉÍÓÚâêôàèìòù]+\s+de\s+20\d{2})",
         text,
@@ -191,7 +193,6 @@ def _scrape_copa_year(year: int, warnings: List[str]) -> List[Dict[str, Any]]:
         range_str = m_range.group(1)
         start_iso, end_iso, y_detected = _parse_pt_range(range_str, warnings)
         if start_iso and end_iso:
-            # Prefer detected year, but if it somehow mismatches, keep year argument
             used_year = y_detected or year
             events.append(
                 {
@@ -218,7 +219,7 @@ def _scrape_copa_year(year: int, warnings: List[str]) -> List[Dict[str, Any]]:
             congress_found = True
     else:
         warnings.append(
-            f"[COPA] Could not find congress PT range 'dd a dd de mês de yyyy' on {temas_url}. (v2026-01-19f)"
+            f"[COPA] Could not find congress PT range 'dd a dd de mês de yyyy' on {temas_url}. (v2026-01-19g)"
         )
 
     # ---- Abstract submission deadline ----
@@ -256,11 +257,11 @@ def _scrape_copa_year(year: int, warnings: List[str]) -> List[Dict[str, Any]]:
             abstract_found = True
     else:
         warnings.append(
-            f"[COPA] Could not find 'Submeta seu trabalho até ...' abstract deadline on {temas_url}. (v2026-01-19f)"
+            f"[COPA] Could not find 'Submeta seu trabalho até ...' abstract deadline on {temas_url}. (v2026-01-19g)"
         )
 
     warnings.append(
-        f"[COPA DEBUG] year={year} congress_found={congress_found} abstract_found={abstract_found} url={temas_url} (v2026-01-19f)"
+        f"[COPA DEBUG] year={year} congress_found={congress_found} abstract_found={abstract_found} url={temas_url} (v2026-01-19g)"
     )
 
     return events
@@ -270,23 +271,27 @@ def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Year-agnostic COPA scraper.
 
-    - Ignores cfg.urls content structure beyond discovering a base year.
-    - Instead, probes temas-livres pages:
+    - Uses cfg.urls only as a hint to find an initial year (from 'copaYYYY').
+    - Probes temas-livres pages:
         https://copaYYYY.saesp.org.br/temas-livres/
-      for YYYY near the current UTC year.
+      for YYYY in a small window around the current UTC year.
+    - Then selects ONE active COPA edition (earliest future congress),
+      and keeps ONLY events for that year (dedup across 2025/2026/etc).
     """
     warnings: List[str] = []
     urls = cfg.get("urls") or []
 
     if not urls:
-        warnings.append("[COPA] No source URLs configured in data/sources.json. (v2026-01-19f)")
+        warnings.append("[COPA] No source URLs configured in data/sources.json. (v2026-01-19g)")
         return [], warnings
+
+    now = datetime.utcnow()
+    today_str = now.strftime("%Y-%m-%d")
+    now_year = now.year
 
     # Try to infer a hint year from the first configured URL (if present),
     # otherwise just use current UTC year.
-    now_year = datetime.utcnow().year
     hint_year = None
-
     m_y = re.search(r"copa(20\d{2})", urls[0])
     if m_y:
         try:
@@ -300,20 +305,68 @@ def scrape_copa(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     start_year = max(2024, center_year - 1)
     end_year = center_year + 4
 
-    all_events: List[Dict[str, Any]] = []
+    raw_events: List[Dict[str, Any]] = []
 
     for y in range(start_year, end_year + 1):
-        events_y = _scrape_copa_year(y, warnings)
-        all_events.extend(events_y)
+        ev_y = _scrape_copa_year(y, warnings)
+        raw_events.extend(ev_y)
 
-    if not all_events:
+    if not raw_events:
         warnings.append(
             f"[COPA] No events produced for years {start_year}-{end_year} "
-            f"(site structure may have changed). (v2026-01-19f)"
+            f"(site structure may have changed). (v2026-01-19g)"
         )
+        warnings.append(
+            f"[COPA DEBUG] window={start_year}-{end_year} total_events=0 active_year=None (v2026-01-19g)"
+        )
+        return [], warnings
+
+    # ---------------- Select a single active edition ----------------
+    # Find all congress events with a valid start_date
+    congress_events = [
+        ev
+        for ev in raw_events
+        if (ev.get("type") == "congress") and ev.get("start_date")
+    ]
+
+    candidate_years: List[int] = []
+
+    for ev in congress_events:
+        s = ev.get("start_date")
+        y = ev.get("year")
+        if not isinstance(y, int):
+            continue
+        # Prefer only congresses that are in the future (>= today_str)
+        if s and s >= today_str:
+            candidate_years.append(y)
+
+    active_year: int | None = None
+
+    if candidate_years:
+        # pick the soonest upcoming congress year
+        active_year = min(candidate_years)
+    else:
+        # fallback: pick the most recent congress year we saw at all
+        years_present = [ev.get("year") for ev in congress_events if isinstance(ev.get("year"), int)]
+        if years_present:
+            active_year = max(years_present)
+
+    if active_year is None:
+        # No congress detected at all; keep everything (deadlines only) but log
+        warnings.append(
+            f"[COPA] No congress events with valid year found; keeping all deadlines as-is. (v2026-01-19g)"
+        )
+        warnings.append(
+            f"[COPA DEBUG] window={start_year}-{end_year} total_events={len(raw_events)} active_year=None (v2026-01-19g)"
+        )
+        return raw_events, warnings
+
+    # Filter to only events for the chosen active_year
+    final_events = [ev for ev in raw_events if ev.get("year") == active_year]
 
     warnings.append(
-        f"[COPA DEBUG] window={start_year}-{end_year} total_events={len(all_events)} (v2026-01-19f)"
+        f"[COPA DEBUG] window={start_year}-{end_year} total_events={len(raw_events)} "
+        f"active_year={active_year} kept_events={len(final_events)} (v2026-01-19g)"
     )
 
-    return all_events, warnings
+    return final_events, warnings
