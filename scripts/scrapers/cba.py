@@ -7,11 +7,12 @@ from typing import Any, Dict, List, Tuple
 from urllib.request import Request, urlopen
 
 
+# Portuguese month names used on the SBA site
 MONTHS_PT = {
     "janeiro": 1,
     "fevereiro": 2,
-    "marco": 3,
     "março": 3,
+    "marco": 3,  # fallback without cedilha, in case of HTML quirks
     "abril": 4,
     "maio": 5,
     "junho": 6,
@@ -44,93 +45,134 @@ def _ymd(y: int, m: int, d: int) -> str:
 
 def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
-    Scrape CBA (Congresso Brasileiro de Anestesiologia) from the SBA
-    'Congressos e eventos' page.
+    Year-agnostic CBA scraper.
 
-    Year-agnostic:
-      - Finds the first 'Congresso Brasileiro de Anestesiologia' block.
-      - Parses PT-BR date like '26 a 29 de novembro de 2026'.
-      - Parses location like 'Fortaleza - CE'.
-      - Tries to extract the official CBA site (e.g. https://www.cba2026.com.br).
+    Strategy (v2026-01-19b):
+      - Fetch SBA page (usually https://www.sbahq.org/).
+      - In the *text*, find a line like:
 
-    Produces a single 'congress' event for the current upcoming CBA.
+          "Congresso Brasileiro de Anestesiologia
+           26 a 29 de novembro de 2026 Fortaleza - CE Presencial"
+
+      - Parse date range "dd a dd de <mês> de 20xx".
+      - Extract location between the year and "Presencial".
+      - Try to find a nearby href to cba20xx.com.br, otherwise fall back to SBA URL.
+
+    Produces a single "congress" event for CBA {year}.
     """
-    version_tag = "v2026-01-19a"
     warnings: List[str] = []
 
     urls = cfg.get("urls") or []
     if not urls:
-        return [], [f"[CBA] No URLs configured in sources.json. ({version_tag})"]
+        return [], ["[CBA] No URLs configured in sources.json. (v2026-01-19b)"]
 
     base_url = urls[0]
 
     try:
         html = _fetch(base_url)
     except Exception as e:  # pragma: no cover - network
-        return [], [f"[CBA] Failed to fetch {base_url}: {e} ({version_tag})"]
+        return [], [f"[CBA] Failed to fetch {base_url}: {e} (v2026-01-19b)"]
 
-    # Flatten whitespace for easier regex across tags/newlines
+    # Keep a copy of raw HTML (for href search) and build a flattened text
     text = re.sub(r"\s+", " ", html, flags=re.DOTALL)
-    lower = text.lower()
 
-    anchor = "congresso brasileiro de anestesiologia"
-    idx = lower.find(anchor)
-    if idx == -1:
-        warnings.append(
-            f"[CBA] Could not locate 'Congresso Brasileiro de Anestesiologia' block on SBA. ({version_tag})"
-        )
-        warnings.append(f"[CBA DEBUG] html_length={len(text)} ({version_tag})")
-        return [], warnings
-
-    # Take a window after the anchor where date + location + site live.
-    block = text[idx : idx + 800]
-
-    # 1) Date range: "26 a 29 de novembro de 2026"
-    m_date = re.search(
-        r"(\d{1,2})\s*a\s*(\d{1,2})\s*de\s*([A-Za-zçãé]+)\s*de\s*(20\d{2})",
-        block,
+    # ------------------------------------------------------------------
+    # 1) Locate the CBA agenda line in *text* (not the banner alt text).
+    #
+    # We specifically look for:
+    #   "Congresso Brasileiro de Anestesiologia <...> Presencial"
+    # where the <...> portion should contain the Portuguese range
+    #   "dd a dd de <mês> de 20xx" and the location.
+    # ------------------------------------------------------------------
+    block_match = re.search(
+        r"Congresso Brasileiro de Anestesiologia\s+(.{0,200}?Presencial)",
+        text,
         flags=re.IGNORECASE,
     )
+
+    if not block_match:
+        warnings.append(
+            "[CBA] Could not locate CBA agenda line containing 'Congresso Brasileiro de Anestesiologia ... Presencial'. (v2026-01-19b)"
+        )
+        return [], warnings
+
+    tail = block_match.group(1)
+    snippet = f"Congresso Brasileiro de Anestesiologia {tail}".strip()
+    warnings.append(f"[CBA DEBUG] snippet='{snippet[:200]}' (v2026-01-19b)")
+
+    # ------------------------------------------------------------------
+    # 2) Parse the date range: "dd a dd de <mês> de 20xx"
+    # ------------------------------------------------------------------
+    m_date = re.search(
+        r"(\d{1,2})\s*a\s*(\d{1,2})\s*de\s*([A-Za-zçéãõ]+)\s*de\s*(20\d{2})",
+        snippet,
+        flags=re.IGNORECASE,
+    )
+
     if not m_date:
         warnings.append(
-            f"[CBA] Could not parse CBA date range near anchor. ({version_tag})"
+            "[CBA] Could not parse CBA date range in snippet. (v2026-01-19b)"
         )
-        warnings.append(f"[CBA DEBUG] block_snippet={block[:200]!r} ({version_tag})")
         return [], warnings
 
     d1 = int(m_date.group(1))
     d2 = int(m_date.group(2))
-    month_name_raw = m_date.group(3).strip()
+    month_name = m_date.group(3).lower()
     year = int(m_date.group(4))
 
-    month_name = month_name_raw.lower()
-    month = MONTHS_PT.get(month_name)
-    if not month:
+    month_num = MONTHS_PT.get(month_name)
+    if not month_num:
         warnings.append(
-            f"[CBA] Unknown PT month name in date range: '{month_name_raw}' ({version_tag})"
+            f"[CBA] Unknown month name in CBA date range: '{month_name}' (v2026-01-19b)"
         )
         return [], warnings
 
-    start_date = _ymd(year, month, d1)
-    end_date = _ymd(year, month, d2)
+    start_date = _ymd(year, month_num, d1)
+    end_date = _ymd(year, month_num, d2)
 
-    # 2) Location: "Fortaleza - CE"
-    m_loc = re.search(r"([A-Za-zÀ-ÿ\s]+-\s*[A-Z]{2})", block)
-    location = m_loc.group(1).strip() if m_loc else "—"
-
-    # 3) CBA site link: try to extract something like https://www.cba2026.com.br
-    m_site = re.search(
-        r"https?://[^\s\"'>]*cba20\d{2}\.com\.br[^\s\"'>]*", block, flags=re.IGNORECASE
+    # ------------------------------------------------------------------
+    # 3) Extract location: from "<year> <location> Presencial"
+    #    e.g. "2026 Fortaleza - CE Presencial"
+    # ------------------------------------------------------------------
+    m_loc = re.search(
+        r"\b20\d{2}\s+(.+?)\s+Presencial",
+        snippet,
+        flags=re.IGNORECASE,
     )
-    if m_site:
-        cba_link = m_site.group(0)
-    else:
-        # fallback: SBA agenda page if we can't see the specific site
-        cba_link = base_url
+    location = m_loc.group(1).strip() if m_loc else "Brasil"
 
-    events: List[Dict[str, Any]] = []
+    # ------------------------------------------------------------------
+    # 4) Try to find a nearby href in the raw HTML that points to the CBA site.
+    # ------------------------------------------------------------------
+    link = base_url
+    href_match = re.search(
+        r"Congresso Brasileiro de Anestesiologia.*?href=\"([^\"]+)\"",
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if href_match:
+        raw_href = href_match.group(1).strip()
+        # Normalise to absolute URL
+        if raw_href.startswith("//"):
+            link = "https:" + raw_href
+        elif raw_href.startswith("http://") or raw_href.startswith("https://"):
+            link = raw_href
+        elif raw_href.startswith("/"):
+            # Assume SBA as host if it's a relative link
+            link = "https://www.sbahq.org" + raw_href
+        else:
+            # e.g. "www.cba2026.com.br"
+            if raw_href.startswith("www."):
+                link = "https://" + raw_href
+            else:
+                link = raw_href
 
-    events.append(
+    warnings.append(
+        f"[CBA DEBUG] parsed_range={start_date}..{end_date} location='{location}' link='{link}' (v2026-01-19b)"
+    )
+    warnings.append("[CBA DEBUG] scraper version v2026-01-19b")
+
+    events: List[Dict[str, Any]] = [
         {
             "series": "CBA",
             "year": year,
@@ -138,7 +180,7 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             "start_date": start_date,
             "end_date": end_date,
             "location": location,
-            "link": cba_link,
+            "link": link,
             "priority": 10,
             "title": {
                 "en": f"CBA {year} — Brazilian Congress of Anesthesiology",
@@ -146,16 +188,11 @@ def scrape_cba(cfg: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
             },
             "evidence": {
                 "url": base_url,
-                "snippet": m_date.group(0) + " | " + location,
-                "field": "sba_agenda_block",
+                "snippet": snippet,
+                "field": "agenda_highlight_line",
             },
             "source": "scraped",
         }
-    )
-
-    warnings.append(
-        f"[CBA DEBUG] anchor_found=True date='{m_date.group(0)}' location='{location}' link='{cba_link}' ({version_tag})"
-    )
-    warnings.append(f"[CBA DEBUG] scraper version {version_tag}")
+    ]
 
     return events, warnings
