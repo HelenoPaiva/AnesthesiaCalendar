@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-21T04:49:58+00:00",
+  "generated_at": "2026-01-21T04:56:48+00:00",
   "events": [
     {
       "series": "ASA",
@@ -222,6 +222,27 @@
       },
       "source": "scraped",
       "id": "cba-2026-congress-5c2f046ecc"
+    },
+    {
+      "series": "COPA",
+      "year": 2025,
+      "type": "congress",
+      "start_date": "2025-04-24",
+      "end_date": "2025-04-27",
+      "location": "Transamerica Expo Center, São Paulo, Brazil",
+      "link": "https://copa2026.saesp.org.br/temas-livres/",
+      "priority": 8,
+      "title": {
+        "en": "COPA 2025 — Paulista Congress of Anesthesiology",
+        "pt": "COPA 2025 — Congresso Paulista de Anestesiologia"
+      },
+      "evidence": {
+        "url": "https://copa2026.saesp.org.br/temas-livres/",
+        "snippet": "24 a 27 de abril de 2025",
+        "field": "copa_congress_range_pt"
+      },
+      "source": "scraped",
+      "id": "copa-2025-congress-9db01c89dd"
     },
     {
       "series": "COPA",
