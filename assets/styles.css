@@ -1,6 +1,6 @@
 /* assets/styles.css
    Anesthesia Congress Calendar
-   Version: 2026-01-19 colored-cards-4-cba-copa
+   Version: 2026-01-19 colored-cards-4
 */
 
 /* -------------------- Base layout -------------------- */
@@ -19,8 +19,8 @@
   --series-asa: #3b82f6;            /* blue */
   --series-euro: #a855f7;           /* purple */
   --series-wca: #22c55e;            /* green */
-  --series-copa: #fb8c00;           /* orange */
-  --series-cba: #00838f;            /* teal */
+  --series-copa: #f97316;           /* orange */
+  --series-cba: #22d3ee;            /* cyan */
   --series-default: #64748b;        /* slate */
 }
 
@@ -259,26 +259,26 @@ body {
   box-shadow: 0 16px 40px rgba(34, 197, 94, 0.45);
 }
 
-/* COPA – orange (distinct warm tone) */
+/* COPA – orange */
 .event-card.series-colored.series-copa {
   background: linear-gradient(
       135deg,
-      rgba(251, 140, 0, 0.24),
+      rgba(249, 115, 22, 0.24),
       rgba(15, 23, 42, 0.98)
     );
-  border-color: rgba(251, 140, 0, 0.8);
-  box-shadow: 0 16px 40px rgba(251, 140, 0, 0.48);
+  border-color: rgba(249, 115, 22, 0.8);
+  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.45);
 }
 
-/* CBA – teal (cooler hue, clearly different from COPA) */
+/* CBA – cyan / teal */
 .event-card.series-colored.series-cba {
   background: linear-gradient(
       135deg,
-      rgba(0, 131, 143, 0.26),
+      rgba(34, 211, 238, 0.24),
       rgba(15, 23, 42, 0.98)
     );
-  border-color: rgba(0, 131, 143, 0.9);
-  box-shadow: 0 16px 40px rgba(0, 131, 143, 0.5);
+  border-color: rgba(34, 211, 238, 0.8);
+  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.45);
 }
 
 /* Fallback: any other series (neutral slate) */
@@ -350,19 +350,17 @@ body {
   color: #bbf7d0;
 }
 
-/* COPA series chip – orange */
 .event-card.series-copa .event-series {
-  border-color: rgba(251, 140, 0, 0.9);
-  color: #ffedd5;
+  border-color: rgba(249, 115, 22, 0.9);
+  color: #fed7aa;
 }
 
-/* CBA series chip – teal */
 .event-card.series-cba .event-series {
-  border-color: rgba(0, 131, 143, 0.9);
-  color: #e0f7fa;
+  border-color: rgba(34, 211, 238, 0.9);
+  color: #a5f3fc;
 }
 
-/* -------------------- Links / ICS button (legacy / currently unused) -------------------- */
+/* -------------------- Links / ICS button (legacy) -------------------- */
 
 .event-link {
   display: flex;
