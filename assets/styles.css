@@ -1,6 +1,6 @@
 /* assets/styles.css
    Anesthesia Congress Calendar
-   Version: 2026-01-19 colored-cards-4
+   Version: 2026-01-19 colored-cards-5
 */
 
 /* -------------------- Base layout -------------------- */
@@ -265,9 +265,9 @@ body {
       135deg,
       rgba(249, 115, 22, 0.24),
       rgba(15, 23, 42, 0.98)
-    );
-  border-color: rgba(249, 115, 22, 0.8);
-  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.45);
+    ) !important;
+  border-color: rgba(249, 115, 22, 0.8) !important;
+  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.45) !important;
 }
 
 /* CBA – cyan / teal */
@@ -276,9 +276,9 @@ body {
       135deg,
       rgba(34, 211, 238, 0.24),
       rgba(15, 23, 42, 0.98)
-    );
-  border-color: rgba(34, 211, 238, 0.8);
-  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.45);
+    ) !important;
+  border-color: rgba(34, 211, 238, 0.8) !important;
+  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.45) !important;
 }
 
 /* Fallback: any other series (neutral slate) */
