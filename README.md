@@ -98,7 +98,7 @@ The goal is a **reliable, always-current reference**, not a productivity or remi
 
 Developed and maintained by  
 **Heleno de Paiva Oliveira, MD, PhD**  
-Anesthesiologist  
+Anesthesiology Professor  
 Universidade Federal do Rio Grande do Norte (UFRN)
 
 Suggestions, corrections, and issue reports are welcome via GitHub.
