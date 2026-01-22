@@ -1,6 +1,6 @@
 /* assets/styles.css
    Anesthesia Congress Calendar
-   Version: 2026-01-19 colored-cards-5
+   Version: 2026-01-19 colored-cards-6 (no-ics)
 */
 
 /* -------------------- Base layout -------------------- */
@@ -358,41 +358,6 @@ body {
 .event-card.series-cba .event-series {
   border-color: rgba(34, 211, 238, 0.9);
   color: #a5f3fc;
-}
-
-/* -------------------- Links / ICS button (legacy) -------------------- */
-
-.event-link {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  margin-top: 2px;
-}
-
-.event-link a {
-  color: #38bdf8;
-  text-decoration: none;
-}
-
-.event-link a:hover {
-  text-decoration: underline;
-}
-
-.event-ics-btn {
-  border: none;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  color: #e5e7eb;
-  cursor: pointer;
-  opacity: 0.85;
-}
-
-.event-ics-btn:hover {
-  text-decoration: underline;
-  opacity: 1;
 }
 
 /* -------------------- Empty / error states -------------------- */
