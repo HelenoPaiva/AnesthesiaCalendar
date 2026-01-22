@@ -1,161 +1,394 @@
-// Minimal ICS generator (client-side)
-// - Creates all-day events for deadlines and multi-day all-day events for congress ranges
-// - Adds default alarms: 30d, 7d, 1d before start
+/* assets/styles.css
+   Anesthesia Congress Calendar
+   Version: 2026-01-19 colored-cards-6 (no-ics)
+*/
 
-function pad2(n) {
-  return String(n).padStart(2, "0");
+/* -------------------- Base layout -------------------- */
+
+:root {
+  --bg-main: #020617;        /* overall background */
+  --bg-panel: #020617;
+  --bg-card: #020617;
+  --border-soft: rgba(148, 163, 184, 0.24);
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+  --chip-bg: rgba(15, 23, 42, 0.9);
+  --chip-border: rgba(148, 163, 184, 0.5);
+
+  /* Series base colors */
+  --series-asa: #3b82f6;            /* blue */
+  --series-euro: #a855f7;           /* purple */
+  --series-wca: #22c55e;            /* green */
+  --series-copa: #f97316;           /* orange */
+  --series-cba: #22d3ee;            /* cyan */
+  --series-default: #64748b;        /* slate */
 }
 
-function ymdToDateLocal(ymd) {
-  // ymd: "YYYY-MM-DD"
-  const [y, m, d] = ymd.split("-").map((x) => parseInt(x, 10));
-  return new Date(y, m - 1, d, 0, 0, 0, 0);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-function formatDateICSAllDay(dt) {
-  // all-day uses YYYYMMDD
-  const y = dt.getFullYear();
-  const m = pad2(dt.getMonth() + 1);
-  const d = pad2(dt.getDate());
-  return `${y}${m}${d}`;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background: radial-gradient(circle at top, #0b1120 0%, #020617 45%, #000 100%);
 }
 
-function escapeICS(text) {
-  return String(text || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
-    .replace(/,/g, "\\,")
-    .replace(/;/g, "\\;");
+body {
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 40px;
 }
 
-function buildUID(id) {
-  // stable-ish UID. If you change domain later, it still works.
-  return `${id}@anesthesia-congress-calendar`;
+/* -------------------- Page shell -------------------- */
+
+.app-root {
+  width: 100%;
+  max-width: 1120px;
 }
 
-function makeICS({ uid, title, description, location, startYMD, endYMDExclusive, alarmsDays = [30, 7, 1] }) {
-  const dtstamp = new Date();
-  const dtstampStr =
-    dtstamp.getUTCFullYear().toString() +
-    pad2(dtstamp.getUTCMonth() + 1) +
-    pad2(dtstamp.getUTCDate()) +
-    "T" +
-    pad2(dtstamp.getUTCHours()) +
-    pad2(dtstamp.getUTCMinutes()) +
-    pad2(dtstamp.getUTCSeconds()) +
-    "Z";
+.app-header {
+  margin-bottom: 16px;
+}
 
-  const lines = [];
-  lines.push("BEGIN:VCALENDAR");
-  lines.push("VERSION:2.0");
-  lines.push("PRODID:-//Anesthesia Congress Calendar//EN");
-  lines.push("CALSCALE:GREGORIAN");
-  lines.push("METHOD:PUBLISH");
+.app-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px;
+}
 
-  lines.push("BEGIN:VEVENT");
-  lines.push(`UID:${escapeICS(uid)}`);
-  lines.push(`DTSTAMP:${dtstampStr}`);
-  lines.push(`SUMMARY:${escapeICS(title)}`);
-  if (description) lines.push(`DESCRIPTION:${escapeICS(description)}`);
-  if (location) lines.push(`LOCATION:${escapeICS(location)}`);
+.app-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
 
-  lines.push(`DTSTART;VALUE=DATE:${startYMD}`);
-  lines.push(`DTEND;VALUE=DATE:${endYMDExclusive}`);
+/* GitHub repo link under subtitle */
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #38bdf8;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
 
-  // Alarms
-  for (const days of alarmsDays) {
-    lines.push("BEGIN:VALARM");
-    lines.push("ACTION:DISPLAY");
-    lines.push(`DESCRIPTION:${escapeICS(title)}`);
-    lines.push(`TRIGGER:-P${days}D`);
-    lines.push("END:VALARM");
+.repo-link::before {
+  content: "↗";
+  opacity: 0.85;
+  font-size: 0.75rem;
+}
+
+.repo-link:hover {
+  text-decoration: underline;
+  color: #7dd3fc;
+}
+
+/* top row: last-updated + lang switch */
+
+.app-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* -------------------- Lang switch -------------------- */
+
+.lang-switch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.lang-btn--active {
+  background: linear-gradient(135deg, #22c1c3, #6366f1);
+  color: #0b1120;
+}
+
+/* -------------------- Last updated chip -------------------- */
+
+.last-updated-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-muted);
+}
+
+.last-updated-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+/* -------------------- Columns -------------------- */
+
+.app-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 8px;
+}
+
+@media (max-width: 880px) {
+  body {
+    padding: 16px 10px 28px;
   }
 
-  lines.push("END:VEVENT");
-  lines.push("END:VCALENDAR");
-
-  return lines.join("\r\n");
-}
-
-export function downloadICSForEvent(event, i18n, lang) {
-  const isRange = event.type === "congress" && event.start_date && event.end_date;
-
-  const series = event.series || "";
-  const year = event.year ? String(event.year) : "";
-  const typeLabel = (i18n?.types?.[event.type]?.[lang]) || event.type;
-
-  const title =
-    (event.title?.[lang]) ||
-    `${series} ${year} — ${typeLabel}`;
-
-  const link = event.link ? `\n${event.link}` : "";
-  const statusNote =
-    event.status && event.status !== "active"
-      ? `\n${(i18n?.status?.[event.status]?.[lang]) || event.status}`
-      : "";
-
-  const description = `${title}${statusNote}${link}`.trim();
-  const location = event.location || "";
-
-  if (!isRange) {
-    const dt = ymdToDateLocal(event.date);
-    const start = formatDateICSAllDay(dt);
-    // all-day DTEND is exclusive; +1 day
-    const endDt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1);
-    const end = formatDateICSAllDay(endDt);
-
-    const ics = makeICS({
-      uid: buildUID(event.id),
-      title,
-      description,
-      location,
-      startYMD: start,
-      endYMDExclusive: end,
-    });
-
-    triggerDownload(ics, safeFilename(`${event.id}.ics`));
-    return;
+  .app-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
-
-  // Range congress
-  const startDt = ymdToDateLocal(event.start_date);
-  const endDtInclusive = ymdToDateLocal(event.end_date);
-  // DTEND exclusive: end_date + 1
-  const endExclusive = new Date(
-    endDtInclusive.getFullYear(),
-    endDtInclusive.getMonth(),
-    endDtInclusive.getDate() + 1
-  );
-
-  const start = formatDateICSAllDay(startDt);
-  const end = formatDateICSAllDay(endExclusive);
-
-  const ics = makeICS({
-    uid: buildUID(event.id),
-    title,
-    description,
-    location,
-    startYMD: start,
-    endYMDExclusive: end,
-  });
-
-  triggerDownload(ics, safeFilename(`${event.id}.ics`));
 }
 
-function triggerDownload(content, filename) {
-  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+/* Column containers */
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+.section-card {
+  border-radius: 24px;
+  padding: 18px 16px 14px;
+  background: radial-gradient(
+      circle at top left,
+      rgba(148, 163, 184, 0.08),
+      transparent 60%
+    ),
+    rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.8);
 }
 
-function safeFilename(name) {
-  return String(name).replace(/[^a-zA-Z0-9._-]/g, "_");
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.section-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* -------------------- Event cards (big colored pills) -------------------- */
+
+.event-card {
+  border-radius: 18px;
+  padding: 10px 14px 10px;
+  margin-bottom: 10px;
+  background: radial-gradient(circle at top left, #020617, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.09s ease-out, box-shadow 0.09s ease-out,
+    border-color 0.09s ease-out, background 0.12s ease-out;
+  cursor: default;
+}
+
+.event-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.95);
+}
+
+/* --- Per-series colors: the WHOLE pill is tinted --- */
+
+/* ASA – blue */
+.event-card.series-colored.series-asa {
+  background: linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.2),
+      rgba(15, 23, 42, 0.98)
+    );
+  border-color: rgba(59, 130, 246, 0.7);
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.42);
+}
+
+/* EUROANAESTHESIA – purple */
+.event-card.series-colored.series-euroanaesthesia {
+  background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.22),
+      rgba(15, 23, 42, 0.98)
+    );
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 16px 40px rgba(168, 85, 247, 0.45);
+}
+
+/* WCA – green */
+.event-card.series-colored.series-wca {
+  background: linear-gradient(
+      135deg,
+      rgba(34, 197, 94, 0.22),
+      rgba(15, 23, 42, 0.98)
+    );
+  border-color: rgba(34, 197, 94, 0.75);
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.45);
+}
+
+/* COPA – orange */
+.event-card.series-colored.series-copa {
+  background: linear-gradient(
+      135deg,
+      rgba(249, 115, 22, 0.24),
+      rgba(15, 23, 42, 0.98)
+    ) !important;
+  border-color: rgba(249, 115, 22, 0.8) !important;
+  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.45) !important;
+}
+
+/* CBA – cyan / teal */
+.event-card.series-colored.series-cba {
+  background: linear-gradient(
+      135deg,
+      rgba(34, 211, 238, 0.24),
+      rgba(15, 23, 42, 0.98)
+    ) !important;
+  border-color: rgba(34, 211, 238, 0.8) !important;
+  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.45) !important;
+}
+
+/* Fallback: any other series (neutral slate) */
+.event-card.series-colored:not(.series-asa):not(.series-euroanaesthesia):not(.series-wca):not(.series-copa):not(.series-cba) {
+  background: linear-gradient(
+      135deg,
+      rgba(148, 163, 184, 0.19),
+      rgba(15, 23, 42, 0.98)
+    );
+  border-color: rgba(148, 163, 184, 0.85);
+  box-shadow: 0 16px 38px rgba(148, 163, 184, 0.38);
+}
+
+/* Title + meta */
+
+.event-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Meta row: chips */
+
+.event-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Chips */
+
+.event-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
+  color: #e5e7eb;
+}
+
+/* Date chip – slightly translucent so event-card color shines through */
+.event-date-main {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(148, 163, 184, 0.7);
+  font-weight: 500;
+}
+
+/* Series chip – use strong series color text/border */
+
+.event-series {
+  font-weight: 500;
+}
+
+/* Series chip colors */
+.event-card.series-asa .event-series {
+  border-color: rgba(59, 130, 246, 0.9);
+  color: #bfdbfe;
+}
+
+.event-card.series-euroanaesthesia .event-series {
+  border-color: rgba(168, 85, 247, 0.9);
+  color: #e9d5ff;
+}
+
+.event-card.series-wca .event-series {
+  border-color: rgba(34, 197, 94, 0.9);
+  color: #bbf7d0;
+}
+
+.event-card.series-copa .event-series {
+  border-color: rgba(249, 115, 22, 0.9);
+  color: #fed7aa;
+}
+
+.event-card.series-cba .event-series {
+  border-color: rgba(34, 211, 238, 0.9);
+  color: #a5f3fc;
+}
+
+/* -------------------- Empty / error states -------------------- */
+
+.empty-state {
+  padding: 12px 10px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+}
+
+.error-state {
+  border-style: solid;
+  border-color: #f97373;
+  color: #fecaca;
+}
+
+/* -------------------- Footer -------------------- */
+
+.app-footer {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  opacity: 0.85;
+}
+
+.app-version {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  opacity: 0.8;
 }
