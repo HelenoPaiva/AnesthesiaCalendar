@@ -8,9 +8,9 @@ abstract: >
 type: software
 
 authors:
-  - name: "Heleno de Paiva Oliveira"
-    affiliation: "Universidade Federal do Rio Grande do Norte (UFRN)"
-    country: "BR"
+  - family-names: Oliveira
+    given-names: Heleno Paiva 
+    orcid: https://orcid.org/0000-0001-7335-3438
 
 repository-code: "https://github.com/HelenoPaiva/AnesthesiaCalendar"
 url: "https://helenopaiva.github.io/AnesthesiaCalendar/"
