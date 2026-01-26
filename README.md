@@ -1,3 +1,9 @@
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18376953-blue)](https://doi.org/10.5281/zenodo.18376953) 
+[![GitHub Pages](https://img.shields.io/badge/live-GitHub%20Pages-brightgreen)](https://helenopaiva.github.io/AnesthesiaCalendar/) 
+[![GitHub release](https://img.shields.io/github/v/release/HelenoPaiva/AnesthesiaCalendar)](https://github.com/HelenoPaiva/AnesthesiaCalendar/releases/tag/v1.0.0) 
+![Last commit](https://img.shields.io/github/last-commit/HelenoPaiva/AnesthesiaCalendar) 
+![License](https://img.shields.io/github/license/HelenoPaiva/AnesthesiaCalendar)
+
 # Anesthesia Congress Calendar
 
 A lightweight, automatically updated calendar of major anesthesia congresses and scientific deadlines.
