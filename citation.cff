@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "Anesthesia Congress Calendar"
+abstract: >
+  A lightweight, automatically updated calendar of major anesthesia congresses
+  and scientific deadlines, built as a public, read-only dashboard that scrapes
+  official dates from major international and regional anesthesia congresses.
+type: software
+
+authors:
+  - name: "Heleno de Paiva Oliveira"
+    affiliation: "Universidade Federal do Rio Grande do Norte (UFRN)"
+    country: "BR"
+
+repository-code: "https://github.com/HelenoPaiva/AnesthesiaCalendar"
+url: "https://helenopaiva.github.io/AnesthesiaCalendar/"
+license: "MIT"
+
+keywords:
+  - anesthesiology
+  - congress
+  - conferences
+  - calendar
+  - deadlines
+  - abstracts
+  - scientific meetings
+  - anesthesia
+
+preferred-citation:
+  type: software
+  title: "Anesthesia Congress Calendar"
+  authors:
+    - name: "Heleno de Paiva Oliveira"
+      affiliation: "Universidade Federal do Rio Grande do Norte (UFRN)"
+      country: "BR"
+  year: 2026
+  url: "https://github.com/HelenoPaiva/AnesthesiaCalendar"
