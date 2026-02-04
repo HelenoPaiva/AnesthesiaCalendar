@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-03T23:37:35+00:00",
+  "generated_at": "2026-02-04T02:47:26+00:00",
   "events": [
     {
       "series": "ASA",
@@ -222,47 +222,6 @@
       },
       "source": "scraped",
       "id": "cba-2026-congress-5c2f046ecc"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "abstract_deadline",
-      "date": "2026-02-13",
-      "location": "Transamerica Expo Center, São Paulo, Brazil",
-      "link": "https://copa2026.saesp.org.br/temas-livres/",
-      "priority": 8,
-      "title": {
-        "en": "COPA 2026 — Abstract submission deadline",
-        "pt": "COPA 2026 — Prazo para submissão de temas livres"
-      },
-      "evidence": {
-        "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "Submeta seu trabalho até 13 de fevereiro de 2026",
-        "field": "abstract_deadline_pt"
-      },
-      "source": "scraped",
-      "id": "copa-2026-abstract_deadline-f62de17b07"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-04-23",
-      "end_date": "2026-04-26",
-      "location": "Transamerica Expo Center, São Paulo, Brazil",
-      "link": "https://copa2026.saesp.org.br/temas-livres/",
-      "priority": 8,
-      "title": {
-        "en": "COPA 2026 — Paulista Congress of Anesthesiology",
-        "pt": "COPA 2026 — Congresso Paulista de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "23 a 26 de abril de 2026",
-        "field": "congress_range_pt"
-      },
-      "source": "scraped",
-      "id": "copa-2026-congress-3296d0e6c9"
     },
     {
       "series": "EUROANAESTHESIA",
@@ -625,67 +584,6 @@
       },
       "source": "scraped",
       "id": "euroanaesthesia-2026-registration_deadline-d7dc3f3e1a"
-    },
-    {
-      "series": "WCA",
-      "year": 2026,
-      "type": "abstract_deadline",
-      "date": "2025-09-30",
-      "location": "Marrakech, Morocco",
-      "link": "https://wcacongress.org/programme/",
-      "priority": 8,
-      "title": {
-        "en": "WCA 2026 — Abstract submission deadline",
-        "pt": "WCA 2026 — Prazo final de submissão de resumos"
-      },
-      "evidence": {
-        "url": "https://wcacongress.org/programme/",
-        "snippet": "30 September 2025 – &#8211; Abstract Submission Deadline",
-        "field": "deadline_line_sliced"
-      },
-      "source": "scraped",
-      "id": "wca-2026-abstract_deadline-897544c79c"
-    },
-    {
-      "series": "WCA",
-      "year": 2026,
-      "type": "early_bird_deadline",
-      "date": "2026-01-21",
-      "location": "Marrakech, Morocco",
-      "link": "https://wcacongress.org/programme/",
-      "priority": 8,
-      "title": {
-        "en": "WCA 2026 — Early-bird registration deadline",
-        "pt": "WCA 2026 — Prazo de inscrição early-bird"
-      },
-      "evidence": {
-        "url": "https://wcacongress.org/programme/",
-        "snippet": "21 January 2026 – &#8211; Early Bird Registration Deadline 15-",
-        "field": "deadline_line_sliced"
-      },
-      "source": "scraped",
-      "id": "wca-2026-early_bird_deadline-f27c6335f6"
-    },
-    {
-      "series": "WCA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-04-15",
-      "end_date": "2026-04-19",
-      "location": "Marrakech, Morocco",
-      "link": "https://wcacongress.org/programme/",
-      "priority": 9,
-      "title": {
-        "en": "WCA 2026 — World Congress of Anaesthesiologists",
-        "pt": "WCA 2026 — Congresso Mundial de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://wcacongress.org/programme/",
-        "snippet": "15-19 April 2026",
-        "field": "congress_range_tolerant"
-      },
-      "source": "scraped",
-      "id": "wca-2026-congress-380aefe7be"
     }
   ]
 }
