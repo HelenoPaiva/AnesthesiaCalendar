@@ -3,7 +3,7 @@ name: Update anesthesia congress calendar data
 on:
   # Manual trigger
   workflow_dispatch:
-  # Optional: scheduled run (04:00 UTC every day)
+  # Optional: scheduled run (every hour)
   schedule:
     - cron: "5 * * * *"
 
