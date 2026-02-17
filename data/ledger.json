@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-02-17T22:45:13+00:00",
+  "updated_at": "2026-02-17T23:38:56+00:00",
   "items": {
     "asa-2026-congress-da8bd39c7f": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -29,7 +29,7 @@
     },
     "asa-2025-other_deadline-ce9e0d22be": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -54,7 +54,7 @@
     },
     "asa-2025-other_deadline-3b6286a71f": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -79,7 +79,7 @@
     },
     "asa-2026-other_deadline-cdf1372821": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -104,7 +104,7 @@
     },
     "asa-2026-other_deadline-7573c916dd": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -129,7 +129,7 @@
     },
     "asa-2026-other_deadline-9dce5e5da0": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -154,7 +154,7 @@
     },
     "asa-2026-other_deadline-ca8f6e26a9": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -179,7 +179,7 @@
     },
     "asa-2026-other_deadline-fc3ca4f572": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -204,7 +204,7 @@
     },
     "asa-2026-abstract_open-ccadcdfc92": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -229,7 +229,7 @@
     },
     "asa-2026-abstract_deadline-b6a05d2c63": {
       "first_seen_at": "2026-02-06T04:54:48+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "ASA",
@@ -254,7 +254,7 @@
     },
     "cba-2026-congress-5c2f046ecc": {
       "first_seen_at": "2026-01-21T04:10:36+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "CBA",
@@ -278,110 +278,9 @@
         "id": "cba-2026-congress-5c2f046ecc"
       }
     },
-    "copa-2026-abstract_deadline-f62de17b07": {
-      "first_seen_at": "2026-02-17T20:50:41+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
-      "status": "active",
-      "event": {
-        "series": "COPA",
-        "year": 2026,
-        "type": "abstract_deadline",
-        "date": "2026-02-13",
-        "location": "Transamerica Expo Center, São Paulo, Brazil",
-        "link": "https://copa2026.saesp.org.br/temas-livres/",
-        "priority": 8,
-        "title": {
-          "en": "COPA 2026 — Abstract submission deadline",
-          "pt": "COPA 2026 — Prazo para submissão de temas livres"
-        },
-        "evidence": {
-          "url": "https://copa2026.saesp.org.br/temas-livres/",
-          "snippet": "Submeta seu trabalho até 13 de fevereiro de 2026",
-          "field": "abstract_deadline_pt"
-        },
-        "source": "scraped",
-        "id": "copa-2026-abstract_deadline-f62de17b07"
-      }
-    },
-    "wca-2026-congress-380aefe7be": {
-      "first_seen_at": "2026-02-17T20:50:41+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
-      "status": "active",
-      "event": {
-        "series": "WCA",
-        "year": 2026,
-        "type": "congress",
-        "start_date": "2026-04-15",
-        "end_date": "2026-04-19",
-        "location": "Marrakech, Morocco",
-        "link": "https://wcacongress.org/programme/",
-        "priority": 9,
-        "title": {
-          "en": "WCA 2026 — World Congress of Anaesthesiologists",
-          "pt": "WCA 2026 — Congresso Mundial de Anestesiologia"
-        },
-        "evidence": {
-          "url": "https://wcacongress.org/programme/",
-          "snippet": "15-19 April 2026",
-          "field": "congress_range_tolerant"
-        },
-        "source": "scraped",
-        "id": "wca-2026-congress-380aefe7be"
-      }
-    },
-    "wca-2026-abstract_deadline-897544c79c": {
-      "first_seen_at": "2026-02-17T20:50:41+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
-      "status": "active",
-      "event": {
-        "series": "WCA",
-        "year": 2026,
-        "type": "abstract_deadline",
-        "date": "2025-09-30",
-        "location": "Marrakech, Morocco",
-        "link": "https://wcacongress.org/programme/",
-        "priority": 8,
-        "title": {
-          "en": "WCA 2026 — Abstract submission deadline",
-          "pt": "WCA 2026 — Prazo final de submissão de resumos"
-        },
-        "evidence": {
-          "url": "https://wcacongress.org/programme/",
-          "snippet": "30 September 2025 – &#8211; Abstract Submission Deadline",
-          "field": "deadline_line_sliced"
-        },
-        "source": "scraped",
-        "id": "wca-2026-abstract_deadline-897544c79c"
-      }
-    },
-    "wca-2026-early_bird_deadline-f27c6335f6": {
-      "first_seen_at": "2026-02-17T20:50:41+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
-      "status": "active",
-      "event": {
-        "series": "WCA",
-        "year": 2026,
-        "type": "early_bird_deadline",
-        "date": "2026-01-21",
-        "location": "Marrakech, Morocco",
-        "link": "https://wcacongress.org/programme/",
-        "priority": 8,
-        "title": {
-          "en": "WCA 2026 — Early-bird registration deadline",
-          "pt": "WCA 2026 — Prazo de inscrição early-bird"
-        },
-        "evidence": {
-          "url": "https://wcacongress.org/programme/",
-          "snippet": "21 January 2026 – &#8211; Early Bird Registration Deadline 15-",
-          "field": "deadline_line_sliced"
-        },
-        "source": "scraped",
-        "id": "wca-2026-early_bird_deadline-f27c6335f6"
-      }
-    },
     "euroanaesthesia-2024-abstract_open-001187d814": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -406,7 +305,7 @@
     },
     "euroanaesthesia-2024-other_deadline-5a004ab697": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -431,7 +330,7 @@
     },
     "euroanaesthesia-2024-abstract_deadline-b4aafbcb03": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -456,7 +355,7 @@
     },
     "euroanaesthesia-2025-early_bird_deadline-c157d31e31": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -481,7 +380,7 @@
     },
     "euroanaesthesia-2025-other_deadline-70c76829f0": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -506,7 +405,7 @@
     },
     "euroanaesthesia-2025-abstract_deadline-1062220e84": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -531,7 +430,7 @@
     },
     "euroanaesthesia-2025-registration_deadline-2b224f2337": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -556,7 +455,7 @@
     },
     "euroanaesthesia-2025-registration_deadline-e5080993be": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -581,7 +480,7 @@
     },
     "euroanaesthesia-2025-congress-ada8f27873": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -607,7 +506,7 @@
     },
     "euroanaesthesia-2025-other_deadline-cdbc05263a": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -632,7 +531,7 @@
     },
     "euroanaesthesia-2025-abstract_open-f29ac3d2b8": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -657,7 +556,7 @@
     },
     "euroanaesthesia-2025-abstract_deadline-f195d57778": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -682,7 +581,7 @@
     },
     "euroanaesthesia-2026-early_bird_deadline-2b32c98935": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -707,7 +606,7 @@
     },
     "euroanaesthesia-2026-other_deadline-c0c5275f93": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -732,7 +631,7 @@
     },
     "euroanaesthesia-2026-abstract_deadline-ed76890b58": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -757,7 +656,7 @@
     },
     "euroanaesthesia-2026-registration_deadline-132f684bd9": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -782,7 +681,7 @@
     },
     "euroanaesthesia-2026-congress-b31acb0f7c": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -808,7 +707,7 @@
     },
     "euroanaesthesia-2026-registration_deadline-d7dc3f3e1a": {
       "first_seen_at": "2026-02-17T16:02:00+00:00",
-      "last_seen_at": "2026-02-17T22:45:13+00:00",
+      "last_seen_at": "2026-02-17T23:38:56+00:00",
       "status": "active",
       "event": {
         "series": "EUROANAESTHESIA",
@@ -837,11 +736,14 @@
     "[CBA DEBUG] parsed_range=2026-11-26..2026-11-29 location='Fortaleza - CE' link='https://www.cba2026.com.br/' (v2026-01-19d)",
     "[CBA DEBUG] scraper version v2026-01-19d",
     "[COPA] Could not locate congress date range like '23 a 26 de abril de 20XX' on https://copa2026.saesp.org.br/temas-livres/. (v2026-01-19j)",
-    "[COPA DEBUG] url=https://copa2026.saesp.org.br/temas-livres/ congress_found=False abstract_found=True (v2026-01-19j)",
+    "[COPA] Could not locate 'Submeta seu trabalho até ...' abstract deadline on https://copa2026.saesp.org.br/temas-livres/. (v2026-01-19j)",
+    "[COPA DEBUG] url=https://copa2026.saesp.org.br/temas-livres/ congress_found=False abstract_found=False (v2026-01-19j)",
     "[COPA DEBUG] scraper version v2026-01-19j",
+    "[COPA] No events produced from temas-livres page (check HTML structure). (v2026-01-19j)",
+    "[WCA] Could not find any 'dd .. dd Month YYYY' congress range. (v2026-01-18f)",
+    "[WCA] No events produced from page. (v2026-01-18f)",
     "[WCA DEBUG] scraper version v2026-01-18f",
-    "[WCA DEBUG] singles=3 deadline_events=2 congress_found=True",
-    "[WCA DEBUG] sample_labels=['&#8211; Abstract Submission Deadline', '&#8211; Early Bird Registration Deadline 15-'] (v2026-01-18f)",
+    "[WCA DEBUG] singles=0 deadline_events=0 congress_found=False",
     "[EUROANAESTHESIA DEBUG] url=https://euroanaesthesia.org/2025/ pairs_found=11 (v2026-01-19c)",
     "[EUROANAESTHESIA DEBUG] url=https://euroanaesthesia.org/2025/ samples=['Abstract submission opens => 01 November 2024', 'Early registration opens (Physical congress) => 28 November 2024', 'Group registration opens => 28 November 2024', 'Abstract submission closes => 05 December 2024'] (v2026-01-19c)",
     "[EUROANAESTHESIA DEBUG] url=https://euroanaesthesia.org/2025/ deadline_events=8 congress_found=True (v2026-01-19c)",
