@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-18T11:48:45+00:00",
+  "generated_at": "2026-02-18T13:36:10+00:00",
   "events": [
     {
       "series": "ASA",
@@ -242,6 +242,27 @@
       },
       "source": "scraped",
       "id": "copa-2026-abstract_deadline-f62de17b07"
+    },
+    {
+      "series": "COPA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-04-23",
+      "end_date": "2026-04-26",
+      "location": "Transamerica Expo Center, São Paulo, Brazil",
+      "link": "https://copa2026.saesp.org.br/temas-livres/",
+      "priority": 8,
+      "title": {
+        "en": "COPA 2026 — Paulista Congress of Anesthesiology",
+        "pt": "COPA 2026 — Congresso Paulista de Anestesiologia"
+      },
+      "evidence": {
+        "url": "https://copa2026.saesp.org.br/temas-livres/",
+        "snippet": "23 a 26 de abril de 2026",
+        "field": "congress_range_pt"
+      },
+      "source": "scraped",
+      "id": "copa-2026-congress-3296d0e6c9"
     },
     {
       "series": "EUROANAESTHESIA",
