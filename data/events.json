@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-22T14:36:29+00:00",
+  "generated_at": "2026-02-22T15:35:14+00:00",
   "events": [
     {
       "series": "ASA",
@@ -201,6 +201,27 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-da8bd39c7f"
+    },
+    {
+      "series": "CBA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-11-26",
+      "end_date": "2026-11-29",
+      "location": "Fortaleza - CE",
+      "link": "https://www.cba2026.com.br/",
+      "priority": 10,
+      "title": {
+        "en": "CBA 2026 — Brazilian Congress of Anesthesiology",
+        "pt": "CBA 2026 — Congresso Brasileiro de Anestesiologia"
+      },
+      "evidence": {
+        "url": "https://www.sbahq.org/agenda/congresso-brasileiro-de-anestesiologia/",
+        "snippet": "<h1 class=\"page-title\" >Congresso Brasileiro de Anestesiologia</h1> <div id=\"programa\"> <div class=\"detalhes mb-5\"> <div class=\"data\"><i class=\"icon data\"></i>26 a 29 de novembro de 2026</div> <div class=\"local\"><i class=\"icon local\"></i>Fortaleza - CE</div> <div class=\"local\"><i class=\"icon2 presen",
+        "field": "agenda_block"
+      },
+      "source": "scraped",
+      "id": "cba-2026-congress-5c2f046ecc"
     },
     {
       "series": "COPA",
