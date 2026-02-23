@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-23T09:01:20+00:00",
+  "generated_at": "2026-02-23T10:06:44+00:00",
   "events": [
     {
       "series": "ASA",
@@ -180,27 +180,6 @@
       },
       "source": "scraped",
       "id": "asa-2026-other_deadline-ca8f6e26a9"
-    },
-    {
-      "series": "ASA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-10-16",
-      "end_date": "2026-10-20",
-      "location": "ASA Annual Meeting",
-      "link": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
-      "priority": 10,
-      "title": {
-        "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
-        "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
-      },
-      "evidence": {
-        "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
-        "snippet": "October 16-20, 2026",
-        "field": "meeting_range"
-      },
-      "source": "scraped",
-      "id": "asa-2026-congress-da8bd39c7f"
     },
     {
       "series": "CBA",
