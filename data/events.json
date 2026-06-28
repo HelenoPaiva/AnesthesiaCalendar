@@ -1,6 +1,207 @@
 {
-  "generated_at": "2026-06-28T11:54:26+00:00",
+  "generated_at": "2026-06-28T14:07:45+00:00",
   "events": [
+    {
+      "series": "ASA",
+      "year": 2026,
+      "type": "congress",
+      "start_date": "2026-10-16",
+      "end_date": "2026-10-20",
+      "location": "ASA Annual Meeting",
+      "link": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+      "priority": 10,
+      "title": {
+        "en": "ANESTHESIOLOGY 2026 — ASA Annual Meeting",
+        "pt": "ANESTHESIOLOGY 2026 — Congresso anual da ASA"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/meetings/anesthesiology-annual-meeting",
+        "snippet": "October 16-20, 2026",
+        "field": "meeting_range"
+      },
+      "source": "scraped",
+      "id": "asa-2026-congress-da8bd39c7f"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2026-12-01",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "PBLD submissions — open",
+        "pt": "Submissões PBLD — abertura"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Problem-Based Learning Discussion Sessions: December 1, 2026 – February 2, 2027",
+        "field": "pbl_window_open"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-366d1ccf68"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-01-05",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "Scientific & educational exhibits — open",
+        "pt": "Exposições científicas e educacionais — abertura"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific and Educational Exhibits: January 5 – March 30, 2027",
+        "field": "exhibits_window_open"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-6afdcb6a46"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "abstract_open",
+      "date": "2027-01-05",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 10,
+      "title": {
+        "en": "ASA 2027 — Scientific abstracts open",
+        "pt": "ASA 2027 — Abertura de resumos científicos"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific Abstracts: January 5 – March 30, 2027",
+        "field": "scientific_abstracts_window_open"
+      },
+      "source": "scraped",
+      "id": "asa-2027-abstract_open-571f9d0358"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-02-02",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "PBLD submissions — deadline",
+        "pt": "Submissões PBLD — prazo final"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Problem-Based Learning Discussion Sessions: December 1, 2026 – February 2, 2027",
+        "field": "pbl_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-5d1c2973ac"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-03-30",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "Scientific & educational exhibits — deadline",
+        "pt": "Exposições científicas e educacionais — prazo final"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific and Educational Exhibits: January 5 – March 30, 2027",
+        "field": "exhibits_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-3ca24fd49e"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "abstract_deadline",
+      "date": "2027-03-30",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 10,
+      "title": {
+        "en": "ASA 2027 — Scientific abstracts deadline",
+        "pt": "ASA 2027 — Prazo final resumos científicos"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Scientific Abstracts: January 5 – March 30, 2027",
+        "field": "scientific_abstracts_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2027-abstract_deadline-3fe4b73733"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-04-27",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "Medically challenging cases / QI projects — deadline",
+        "pt": "Casos desafiadores / projetos de melhoria — prazo final"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "Medically Challenging Cases and Quality Improvement Projects : February 2 – April 27, 2027",
+        "field": "mcc_qi_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-d6c10c6ed0"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-08-25",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "General session submissions — open",
+        "pt": "Submissões sessões gerais — abertura"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "General Session Submissions: August 25 - November 16, 2027",
+        "field": "general_session_window_open"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-54415e3ca9"
+    },
+    {
+      "series": "ASA",
+      "year": 2027,
+      "type": "other_deadline",
+      "date": "2027-11-16",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "General session submissions — deadline",
+        "pt": "Submissões sessões gerais — prazo final"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "General Session Submissions: August 25 - November 16, 2027",
+        "field": "general_session_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2027-other_deadline-f07ccc448e"
+    },
     {
       "series": "CBA",
       "year": 2026,
@@ -21,47 +222,6 @@
       },
       "source": "scraped",
       "id": "cba-2026-congress-5c2f046ecc"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "abstract_deadline",
-      "date": "2026-02-13",
-      "location": "Transamerica Expo Center, São Paulo, Brazil",
-      "link": "https://copa2026.saesp.org.br/temas-livres/",
-      "priority": 8,
-      "title": {
-        "en": "COPA 2026 — Abstract submission deadline",
-        "pt": "COPA 2026 — Prazo para submissão de temas livres"
-      },
-      "evidence": {
-        "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "Submeta seu trabalho até 13 de fevereiro de 2026",
-        "field": "abstract_deadline_pt"
-      },
-      "source": "scraped",
-      "id": "copa-2026-abstract_deadline-f62de17b07"
-    },
-    {
-      "series": "COPA",
-      "year": 2026,
-      "type": "congress",
-      "start_date": "2026-04-23",
-      "end_date": "2026-04-26",
-      "location": "Transamerica Expo Center, São Paulo, Brazil",
-      "link": "https://copa2026.saesp.org.br/temas-livres/",
-      "priority": 8,
-      "title": {
-        "en": "COPA 2026 — Paulista Congress of Anesthesiology",
-        "pt": "COPA 2026 — Congresso Paulista de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://copa2026.saesp.org.br/temas-livres/",
-        "snippet": "23 a 26 de abril de 2026",
-        "field": "congress_range_pt"
-      },
-      "source": "scraped",
-      "id": "copa-2026-congress-3296d0e6c9"
     },
     {
       "series": "EUROANAESTHESIA",
@@ -424,27 +584,6 @@
       },
       "source": "scraped",
       "id": "euroanaesthesia-2026-registration_deadline-d7dc3f3e1a"
-    },
-    {
-      "series": "WCA",
-      "year": 2028,
-      "type": "congress",
-      "start_date": "2028-05-07",
-      "end_date": "2028-05-11",
-      "location": "Marrakech, Morocco",
-      "link": "https://wcacongress.org/programme/",
-      "priority": 9,
-      "title": {
-        "en": "WCA 2028 — World Congress of Anaesthesiologists",
-        "pt": "WCA 2028 — Congresso Mundial de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://wcacongress.org/programme/",
-        "snippet": "7-11 May 2028",
-        "field": "congress_range_tolerant"
-      },
-      "source": "scraped",
-      "id": "wca-2028-congress-72a0e6bfc9"
     }
   ]
 }
