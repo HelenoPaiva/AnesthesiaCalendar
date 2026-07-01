@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-01T10:06:34+00:00",
+  "generated_at": "2026-07-01T13:37:59+00:00",
   "events": [
     {
       "series": "ASA",
@@ -625,27 +625,6 @@
       },
       "source": "scraped",
       "id": "euroanaesthesia-2026-registration_deadline-d7dc3f3e1a"
-    },
-    {
-      "series": "WCA",
-      "year": 2028,
-      "type": "congress",
-      "start_date": "2028-05-07",
-      "end_date": "2028-05-11",
-      "location": "Marrakech, Morocco",
-      "link": "https://wcacongress.org/programme/",
-      "priority": 9,
-      "title": {
-        "en": "WCA 2028 — World Congress of Anaesthesiologists",
-        "pt": "WCA 2028 — Congresso Mundial de Anestesiologia"
-      },
-      "evidence": {
-        "url": "https://wcacongress.org/programme/",
-        "snippet": "7-11 May 2028",
-        "field": "congress_range_tolerant"
-      },
-      "source": "scraped",
-      "id": "wca-2028-congress-72a0e6bfc9"
     }
   ]
 }
