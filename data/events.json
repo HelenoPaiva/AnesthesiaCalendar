@@ -1,6 +1,26 @@
 {
-  "generated_at": "2026-07-07T18:08:58+00:00",
+  "generated_at": "2026-07-07T20:54:50+00:00",
   "events": [
+    {
+      "series": "ASA",
+      "year": 2026,
+      "type": "other_deadline",
+      "date": "2026-08-25",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "General session submissions — open",
+        "pt": "Submissões sessões gerais — abertura"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "General Session Submissions: August 25 - November 16, 2026",
+        "field": "general_session_window_open"
+      },
+      "source": "scraped",
+      "id": "asa-2026-other_deadline-b67d725573"
+    },
     {
       "series": "ASA",
       "year": 2026,
@@ -21,6 +41,26 @@
       },
       "source": "scraped",
       "id": "asa-2026-congress-da8bd39c7f"
+    },
+    {
+      "series": "ASA",
+      "year": 2026,
+      "type": "other_deadline",
+      "date": "2026-11-16",
+      "location": "—",
+      "link": "https://www.asahq.org/annualmeeting/education/submissions",
+      "priority": 9,
+      "title": {
+        "en": "General session submissions — deadline",
+        "pt": "Submissões sessões gerais — prazo final"
+      },
+      "evidence": {
+        "url": "https://www.asahq.org/annualmeeting/education/submissions",
+        "snippet": "General Session Submissions: August 25 - November 16, 2026",
+        "field": "general_session_window_close"
+      },
+      "source": "scraped",
+      "id": "asa-2026-other_deadline-d3ca183e5a"
     },
     {
       "series": "ASA",
@@ -161,46 +201,6 @@
       },
       "source": "scraped",
       "id": "asa-2027-other_deadline-d6c10c6ed0"
-    },
-    {
-      "series": "ASA",
-      "year": 2027,
-      "type": "other_deadline",
-      "date": "2027-08-25",
-      "location": "—",
-      "link": "https://www.asahq.org/annualmeeting/education/submissions",
-      "priority": 9,
-      "title": {
-        "en": "General session submissions — open",
-        "pt": "Submissões sessões gerais — abertura"
-      },
-      "evidence": {
-        "url": "https://www.asahq.org/annualmeeting/education/submissions",
-        "snippet": "General Session Submissions: August 25 - November 16, 2027",
-        "field": "general_session_window_open"
-      },
-      "source": "scraped",
-      "id": "asa-2027-other_deadline-54415e3ca9"
-    },
-    {
-      "series": "ASA",
-      "year": 2027,
-      "type": "other_deadline",
-      "date": "2027-11-16",
-      "location": "—",
-      "link": "https://www.asahq.org/annualmeeting/education/submissions",
-      "priority": 9,
-      "title": {
-        "en": "General session submissions — deadline",
-        "pt": "Submissões sessões gerais — prazo final"
-      },
-      "evidence": {
-        "url": "https://www.asahq.org/annualmeeting/education/submissions",
-        "snippet": "General Session Submissions: August 25 - November 16, 2027",
-        "field": "general_session_window_close"
-      },
-      "source": "scraped",
-      "id": "asa-2027-other_deadline-f07ccc448e"
     },
     {
       "series": "CBA",
