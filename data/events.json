@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T02:16:13+00:00",
+  "generated_at": "2026-10-12T10:37:15+00:00",
   "events": [
     {
       "series": "ASA",
@@ -619,7 +619,7 @@
       },
       "evidence": {
         "url": "https://euroanaesthesia.org/2027/",
-        "snippet": "Early & group registration opens — 11 November 2026",
+        "snippet": "Early registration opens — 11 November 2026",
         "field": "important_dates_timeline"
       },
       "source": "scraped",
